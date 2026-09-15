@@ -790,7 +790,7 @@ Public Sub FillGroupColumns(ByVal lo As ListObject)
     
     ' Простая формула: проверяем каждый продукт из списка через COUNTIF с wildcard
     ' Для множественных продуктов (разделённых ";") используем SUMPRODUCT
-    formulaPgs = "=IF(SUMPRODUCT(COUNTIF(_ProductLists_PGS,""*""&TRIM(MID(SUBSTITUTE([@Продукt],"";"",REPT("" "",100)),(ROW($XFD$1:$XFD$100))-1)*100+1,100)))>0,""да"","""")"
+    formulaPgs = "=IF(SUMPRODUCT(COUNTIF(_ProductLists_PGS,""*""&TRIM(MID(SUBSTITUTE([@Продукт],"";"",REPT("" "",100)),(ROW($XFD$1:$XFD$100))-1)*100+1,100)))>0,""да"","""")"
     formulaPlm = "=IF(SUMPRODUCT(COUNTIF(_ProductLists_PLM,""*""&TRIM(MID(SUBSTITUTE([@Продукт],"";"",REPT("" "",100)),(ROW($XFD$1:$XFD$100))-1)*100+1,100)))>0,""да"","""")"
     
     On Error Resume Next
@@ -850,7 +850,16 @@ Public Sub CreateProductReferenceSheet(ByVal wb As Workbook)
     If outRow > 2 Then
         Dim lo As ListObject
         Set lo = wsRef.ListObjects.Add(xlSrcRange, wsRef.Range("A1:B" & (outRow - 1)), , xlYes)
-        lo.name = "тблСправочникПродуктов": lo.tableStyle = "TableStyleMedium15"
+        ' Принудительно задаем имя таблицы, чтобы избежать суффиксов _1, _2 и т.д.
+        On Error Resume Next
+        lo.name = "тблСправочникПродуктов"
+        ' Если имя было автоматически изменено Excel (например, на тблСправочникПродуктов_1),
+        ' переименуем таблицу явно
+        If lo.name <> "тблСправочникПродуктов" Then
+            lo.name = "тблСправочникПродуктов"
+        End If
+        On Error GoTo 0
+        lo.tableStyle = "TableStyleMedium15"
     End If
     wsRef.Columns("A").ColumnWidth = 40: wsRef.Columns("B").ColumnWidth = 20
     LogStep "CreateProductReferenceSheet: завершено"

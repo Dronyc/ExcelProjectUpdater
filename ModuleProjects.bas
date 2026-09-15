@@ -356,7 +356,7 @@ NextSourceRow:
     gStep = "Обновление групп ПГС/PLM"
     ProgressSet 93, "Обновление групп ПГС/PLM..."
     BuildProductMapping loProjects
-    FillGroupColumns loProjects
+    SetAllProjectFormulas loProjects
     
     gStep = "Запись ошибок"
     ProgressSet 96, "Запись ошибок..."
@@ -495,7 +495,7 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     
     ' Группы
     BuildProductMapping loProjects
-    FillGroupColumns loProjects
+    SetAllProjectFormulas loProjects
     
     ' Статистика
     Dim wsStat As Worksheet

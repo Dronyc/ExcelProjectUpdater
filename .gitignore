@@ -1,1 +1,87 @@
-Nothing should be ignored in this case, as the changes consist only of source code files (.bas, .frm) without any build artifacts, dependencies, or temporary files.
+```
+# VBA/Office files
+*.bas
+*.frm
+*.cls
+*.vba
+*.vbs
+*.db
+*.accdb
+*.mdb
+*.tmp
+
+# Backup files
+*.bak
+*.~*
+*~
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.tox/
+.coverage
+htmlcov/
+.coverage.*
+.nyc_output/
+coverage-final.json
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS generated
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.directory
+*.nib
+*.plist
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+
+# Distribution / packaging
+*.tar.gz
+*.whl
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# System files
+*.tmp
+*.temp
+*.log
+*~
+.#*
+.DS_Store
+Thumbs.db
+```
