@@ -410,10 +410,23 @@ UpdateFail:
     LogError gStep, Err.Number, Err.description
     EndLogging
     ProgressHide
-    If Not wbSource Is Nothing Then On Error Resume Next: wbSource.Close SaveChanges:=False
-    If Not wbTarget Is Nothing Then On Error Resume Next: wbTarget.Close SaveChanges:=False
+    
+    ' Корректное освобождение объектов даже при ошибке
+    On Error Resume Next
+    If Not wbSource Is Nothing Then wbSource.Close SaveChanges:=False
+    If Not wbTarget Is Nothing Then wbTarget.Close SaveChanges:=False
+    On Error GoTo UpdateFail
+    
+    ' Явное освобождение ссылок на объекты
+    Set wbSource = Nothing
+    Set wbTarget = Nothing
+    
+    ' Восстановление настроек приложения
     Application.Calculation = oldCalc
-    Application.ScreenUpdating = True: Application.EnableEvents = True: Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    
     MsgBox "Ошибка обновления." & vbCrLf & "Шаг: " & gStep & vbCrLf & "Код: " & Err.Number & vbCrLf & Err.description, vbCritical
 End Sub
 

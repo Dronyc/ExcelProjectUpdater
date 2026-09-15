@@ -1,0 +1,31 @@
+```
+# VBA/Office files
+*.bas
+*.frm
+*.cls
+*.vba
+*.vbs
+*.bas~
+*.frm~
+*.cls~
+
+# Backup and temporary files
+*~
+*.bak
+*.tmp
+*.temp
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log files
+*.log
+
+# Environment files
+.env
+.env.local
+*.env.*
+```

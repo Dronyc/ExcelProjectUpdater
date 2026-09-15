@@ -5,6 +5,31 @@ Attribute VB_Name = "ModuleBuilder"
 Option Explicit
 
 '===============================================================
+' КОНСТАНТЫ: РАЗДЕЛЕНИЕ СТОЛБЦОВ НА ДАННЫЕ И ФОРМУЛЬНЫЕ
+' Критическое ограничение: Запись через .Value разрешена ТОЛЬКО в столбцы данных
+'===============================================================
+
+' Столбцы, разрешенные для записи данных через .Value (исходные данные из выгрузки)
+Public Const DATA_COLUMNS As String = _
+    "Контрагент|Дата создания|Код в базе 1С:УПП|Код проекта в 1С:УПП|" & _
+    "Наименование проекта|Состояние|Тип проекта|Продукт|" & _
+    "Куратор|Менеджер ОП|Руководитель проекта|Автор"
+
+' Столбцы, заполняемые ТОЛЬКО формулами (запрещена запись .Value)
+Public Const FORMULA_COLUMNS As String = _
+    "Группа ПГС|Группа PLM|" & _
+    "Проверка Контрагент|Проверка Дата создания|Проверка Код|Проверка Код проекта в 1С:УПП|" & _
+    "Проверка Наименование проекта|Проверка Состояние|Недопустимое Состояние|" & _
+    "Проверка Куратор|Проверка Менеджер ОП|Список некорректных полей|" & _
+    "Ошибка обязательных полей|Число ошибок|Проект закрыт|" & _
+    "Дубль кода|Дубль ссылки|Статус проверки авто|Комментарий к статусу авто|" & _
+    "Статус проверки|Комментарий к статусу|Есть в эталоне"
+
+' Столбцы ручного ввода (не перезаписываются при обновлении, сохраняются пользователем)
+Public Const MANUAL_COLUMNS As String = _
+    "Ссылка на проект|Ответственный за статус|Статус проверки ручной|Комментарий к статусу ручной"
+
+'===============================================================
 ' УДАЛЕНИЕ УСТАРЕВШИХ СТОЛБЦОВ
 '===============================================================
 Public Sub RemoveOldColumns(ByVal lo As ListObject)
@@ -37,23 +62,49 @@ End Sub
 
 '===============================================================
 ' ЗАПИСЬ СТРОКИ ВЫГРУЗКИ В ТАБЛИЦУ
+' Критическое ограничение: Запись .Value выполняется ТОЛЬКО в столбцы данных.
+' Столбцы ручного ввода (MANUAL_COLUMNS) не перезаписываются при обновлении существующих строк.
+' Формульные столбцы заполняются через SetColumnFormula (Calculated Columns).
 '===============================================================
 Public Sub WriteSourceRowToListRow( _
     ByVal lo As ListObject, ByVal lr As ListRow, _
     ByVal srcValues As Variant, ByVal r As Long, _
     ByVal colIdx As Variant, ByVal parsedDate As Date, ByVal codeText As String)
+    
+    ' Явная запись только в разрешенные столбцы данных (DATA_COLUMNS)
+    ' Порядок и список столбцов синхронизирован с константой DATA_COLUMNS
+    
+    ' 1. Контрагент
     lr.Range(lo.ListColumns("Контрагент").Index).value = GetCleanText(srcValues(r, colIdx(1)))
+    ' 2. Дата создания
     lr.Range(lo.ListColumns("Дата создания").Index).value = parsedDate
+    ' 3. Код в базе 1С:УПП
     lr.Range(lo.ListColumns("Код в базе 1С:УПП").Index).value = codeText
+    ' 4. Код проекта в 1С:УПП
     lr.Range(lo.ListColumns("Код проекта в 1С:УПП").Index).value = GetCleanText(srcValues(r, colIdx(4)))
+    ' 5. Наименование проекта
     lr.Range(lo.ListColumns("Наименование проекта").Index).value = GetCleanText(srcValues(r, colIdx(5)))
+    ' 6. Состояние
     lr.Range(lo.ListColumns("Состояние").Index).value = GetCleanText(srcValues(r, colIdx(6)))
+    ' 7. Тип проекта
     lr.Range(lo.ListColumns("Тип проекта").Index).value = GetCleanText(srcValues(r, colIdx(7)))
+    ' 8. Продукт
     lr.Range(lo.ListColumns("Продукт").Index).value = GetCleanText(srcValues(r, colIdx(8)))
+    ' 9. Куратор
     lr.Range(lo.ListColumns("Куратор").Index).value = GetCleanText(srcValues(r, colIdx(9)))
+    ' 10. Менеджер ОП
     lr.Range(lo.ListColumns("Менеджер ОП").Index).value = GetCleanText(srcValues(r, colIdx(10)))
+    ' 11. Руководитель проекта
     lr.Range(lo.ListColumns("Руководитель проекта").Index).value = GetCleanText(srcValues(r, colIdx(11)))
+    ' 12. Автор
     lr.Range(lo.ListColumns("Автор").Index).value = GetCleanText(srcValues(r, colIdx(12)))
+    
+    ' ПРИМЕЧАНИЕ: Столбцы ручного ввода (Ссылка на проект, Ответственный за статус, 
+    ' Статус проверки ручной, Комментарий к статусу ручной) НЕ перезаписываются здесь.
+    ' Они сохраняются при обновлении существующих строк и остаются пустыми при добавлении новых.
+    
+    ' Формульные столбцы (Группа ПГС, Группа PLM, Проверка*, Статус проверки авто и др.)
+    ' заполняются автоматически через механизм Calculated Columns умной таблицы Excel.
 End Sub
 
 '===============================================================
@@ -84,10 +135,26 @@ Public Sub SetAllProjectFormulas(ByVal lo As ListObject)
     SetColumnFormula lo, "Есть в эталоне", "=ЕСЛИ(ЕОШИБКА(ПОИСКПОЗ([@[Дата создания]];тблЭталон[Дата создания];0));""Нет"";""Да"")"
 End Sub
 
+'===============================================================
+' УСТАНОВКА ФОРМУЛЫ ЧЕРЕЗ CALCULATED COLUMN
+' Оптимизация: вместо записи формулы во весь диапазон DataBodyRange,
+' записываем только в первую ячейку. Excel сам распространяет формулу
+' на весь столбец умной таблицы (механизм Calculated Column).
+' Это дает значительный прирост производительности на больших таблицах.
+'===============================================================
 Public Sub SetColumnFormula(ByVal lo As ListObject, ByVal columnName As String, ByVal formulaText As String)
     On Error Resume Next
-    If Not lo.ListColumns(columnName).DataBodyRange Is Nothing Then
-        lo.ListColumns(columnName).DataBodyRange.formula = formulaText
+    Dim lc As ListColumn
+    Set lc = lo.ListColumns(columnName)
+    If lc Is Nothing Then
+        On Error GoTo 0
+        Exit Sub
+    End If
+    
+    If Not lc.DataBodyRange Is Nothing Then
+        ' Оптимизация: записываем формулу только в первую ячейку столбца
+        ' Excel автоматически расширяет её на весь столбец (Calculated Column)
+        lc.DataBodyRange.Cells(1, 1).formula = formulaText
     End If
     On Error GoTo 0
 End Sub

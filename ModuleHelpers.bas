@@ -394,6 +394,7 @@ Public Sub ProgressHide()
     On Error Resume Next
     If Not frmProgress Is Nothing Then
         Unload frmProgress
+        Set frmProgress = Nothing  ' Явное освобождение ссылки на форму
     End If
     On Error GoTo 0
 End Sub
