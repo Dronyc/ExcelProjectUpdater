@@ -849,16 +849,14 @@ Public Sub CreateProductReferenceSheet(ByVal wb As Workbook)
     
     If outRow > 2 Then
         Dim lo As ListObject
-        Set lo = wsRef.ListObjects.Add(xlSrcRange, wsRef.Range("A1:B" & (outRow - 1)), , xlYes)
-        ' Принудительно задаем имя таблицы, чтобы избежать суффиксов _1, _2 и т.д.
+        ' Удаляем старое имя из кэша книги, чтобы Excel не добавлял суффикс _1
         On Error Resume Next
-        lo.name = "тблСправочникПродуктов"
-        ' Если имя было автоматически изменено Excel (например, на тблСправочникПродуктов_1),
-        ' переименуем таблицу явно
-        If lo.name <> "тблСправочникПродуктов" Then
-            lo.name = "тблСправочникПродуктов"
-        End If
+        wb.Names("тблСправочникПродуктов").Delete
         On Error GoTo 0
+        
+        Set lo = wsRef.ListObjects.Add(xlSrcRange, wsRef.Range("A1:B" & (outRow - 1)), , xlYes)
+        ' Принудительно задаем имя таблицы
+        lo.name = "тблСправочникПродуктов"
         lo.tableStyle = "TableStyleMedium15"
     End If
     wsRef.Columns("A").ColumnWidth = 40: wsRef.Columns("B").ColumnWidth = 20
