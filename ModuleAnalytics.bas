@@ -52,12 +52,13 @@ Public Sub CreateAnalyticsStructure(ByVal rootFolder As String)
     DeleteSheetIfExists wb, "Сводная статистика"
     DeleteSheetIfExists wb, SHEET_ANALYTICS
     DeleteSheetIfExists wb, SHEET_REFERENCE_DATA
-    DeleteSheetIfExists wb, SHEET_PRODUCT_REF
     
-    ' Создание СправочникПродуктов
+    ' Создание СправочникПродуктов (только если отсутствует)
     LogStep "Создание СправочникПродуктов"
     ProgressSet 50, "Создание справочника продуктов..."
-    ModuleBuilder.CreateProductReferenceSheet wb
+    If Not SheetExists(wb, SHEET_PRODUCT_REF) Then
+        ModuleBuilder.CreateProductReferenceSheet wb
+    End If
     
     ' Создание листа Эталон_Данные (пустой шаблон)
     LogStep "Создание листа Эталон_Данные"
@@ -1005,6 +1006,17 @@ Private Sub DeleteSheetIfExists(ByVal wb As Workbook, ByVal sheetName As String)
         LogStep "Удалён лист: " & sheetName
     End If
 End Sub
+
+'===============================================================
+' ПРОВЕРКА СУЩЕСТВОВАНИЯ ЛИСТА
+'===============================================================
+Private Function SheetExists(ByVal wb As Workbook, ByVal sheetName As String) As Boolean
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = wb.Worksheets(sheetName)
+    On Error GoTo 0
+    SheetExists = Not ws Is Nothing
+End Function
 
 '===============================================================
 ' ПРИМЕНЕНИЕ ГРАНИЦ (используется из ModuleHelpers)
