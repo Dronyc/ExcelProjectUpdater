@@ -1,1 +1,1 @@
-Nothing should be ignored in this case, as the changes consist only of source code files (.bas, .frm) without any build artifacts, dependencies, or temporary files.
+Nothing should be ignored in this case, as the changes only include source code files (.bas files) without any build artifacts, dependencies, or temporary files.
