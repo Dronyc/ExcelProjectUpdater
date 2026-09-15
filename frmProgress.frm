@@ -19,6 +19,19 @@ Private lblBack As MSForms.label
 Private lblFill As MSForms.label
 Private lblPct As MSForms.label
 
+' WinAPI declaration for setting window always on top
+#If VBA7 Then
+    Private Declare PtrSafe Sub SetWindowPos Lib "user32" (ByVal hwnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
+    Private Const HWND_TOPMOST As LongPtr = -1
+    Private Const SWP_NOMOVE As Long = &H2
+    Private Const SWP_NOSIZE As Long = &H1
+#Else
+    Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
+    Private Const HWND_TOPMOST As Long = -1
+    Private Const SWP_NOMOVE As Long = &H2
+    Private Const SWP_NOSIZE As Long = &H1
+#End If
+
 Private Sub UserForm_Initialize()
     Me.Caption = "Обновление проектов"
     Me.Width = 420
@@ -45,6 +58,18 @@ Private Sub UserForm_Initialize()
     lblPct.Left = 12: lblPct.Top = 78
     lblPct.Width = 380: lblPct.Height = 16
     lblPct.Caption = "0%"
+    
+    ' Устанавливаем форму поверх всех окон (TopMost)
+    On Error Resume Next
+    SetWindowPos Me.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE
+    On Error GoTo 0
+End Sub
+
+Private Sub UserForm_Terminate()
+    ' Снимаем флаг TopMost при закрытии формы
+    On Error Resume Next
+    SetWindowPos Me.hwnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE
+    On Error GoTo 0
 End Sub
 
 Public Sub SetProgress(ByVal pct As Double, ByVal comment As String)

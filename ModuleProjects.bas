@@ -364,6 +364,12 @@ NextSourceRow:
     
     gStep = "Сохранение результата"
     ProgressSet 98, "Сохранение..."
+    
+    ' Активируем лист "Проекты" перед сохранением
+    On Error Resume Next
+    wbTarget.Worksheets("Проекты").Activate
+    On Error GoTo UpdateFail
+    
     If targetPath = finalPath Then
         wbTarget.Save
     Else

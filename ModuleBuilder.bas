@@ -716,6 +716,7 @@ Public Sub FillGroupColumns(ByVal lo As ListObject)
     On Error GoTo 0
     If colProd = 0 Or colPgs = 0 Or colPlm = 0 Then Exit Sub
     
+    ' Создаём временные листы со списками продуктов ПГС и PLM для использования в формулах
     Dim mapPgs As Collection: Set mapPgs = New Collection
     Dim mapPlm As Collection: Set mapPlm = New Collection
     Dim lastRow As Long: lastRow = wsSet.Cells(wsSet.Rows.count, 4).End(xlUp).row
@@ -732,19 +733,77 @@ Public Sub FillGroupColumns(ByVal lo As ListObject)
         End If
     Next i
     
-    Dim r As Long, parts() As String, t As Long, pt As String
-    Dim isPgs As Boolean, isPlm As Boolean
-    For r = 1 To lo.DataBodyRange.Rows.count
-        isPgs = False: isPlm = False
-        parts = Split(Trim(CStr(lo.DataBodyRange.Cells(r, colProd).value)), ";")
-        For t = 0 To UBound(parts)
-            pt = Trim(parts(t))
-            If CollectionHasKey(mapPgs, "K|" & pt) Then isPgs = True
-            If CollectionHasKey(mapPlm, "K|" & pt) Then isPlm = True
-        Next t
-        If isPgs Then lo.DataBodyRange.Cells(r, colPgs).value = "да" Else lo.DataBodyRange.Cells(r, colPgs).value = ""
-        If isPlm Then lo.DataBodyRange.Cells(r, colPlm).value = "да" Else lo.DataBodyRange.Cells(r, colPlm).value = ""
-    Next r
+    ' Создаём именованные диапазоны для списков продуктов ПГС и PLM на отдельном служебном листе
+    Dim wsLists As Worksheet
+    On Error Resume Next
+    Set wsLists = lo.Parent.Parent.Worksheets("_ProductLists")
+    On Error GoTo 0
+    If wsLists Is Nothing Then
+        Set wsLists = lo.Parent.Parent.Worksheets.Add(After:=lo.Parent.Parent.Worksheets(lo.Parent.Parent.Worksheets.count))
+        wsLists.name = "_ProductLists"
+        wsLists.Visible = xlSheetVeryHidden
+    Else
+        wsLists.Cells.Clear
+    End If
+    
+    ' Заполняем список ПГС
+    Dim pgsRow As Long: pgsRow = 1
+    wsLists.Cells(1, 1).value = "ПГС_Продукты"
+    If mapPgs.count > 0 Then
+        Dim key As Variant
+        For Each key In mapPgs
+            wsLists.Cells(pgsRow + 1, 1).value = Replace(key, "K|", "")
+            pgsRow = pgsRow + 1
+        Next key
+    End If
+    
+    ' Заполняем список PLM
+    Dim plmRow As Long: plmRow = 1
+    wsLists.Cells(1, 2).value = "PLM_Продукты"
+    If mapPlm.count > 0 Then
+        Dim key2 As Variant
+        For Each key2 In mapPlm
+            wsLists.Cells(plmRow + 1, 2).value = Replace(key2, "K|", "")
+            plmRow = plmRow + 1
+        Next key2
+    End If
+    
+    ' Создаём именованные диапазоны
+    Dim nmPgs As Name, nmPlm As Name
+    On Error Resume Next
+    lo.Parent.Parent.Names("_ProductLists_PGS").Delete
+    lo.Parent.Parent.Names("_ProductLists_PLM").Delete
+    On Error GoTo 0
+    
+    If pgsRow > 1 Then
+        Set nmPgs = lo.Parent.Parent.Names.Add(Name:="_ProductLists_PGS", RefersTo:=wsLists.Range("$A$2:$A$" & pgsRow))
+    End If
+    If plmRow > 1 Then
+        Set nmPlm = lo.Parent.Parent.Names.Add(Name:="_ProductLists_PLM", RefersTo:=wsLists.Range("$B$2:$B$" & plmRow))
+    End If
+    
+    ' Применяем формулы ко всему диапазону сразу
+    ' Формула проверяет, содержится ли продукт из столбца Продукт в списке ПГС или PLM
+    ' Используем формулу массива для проверки вхождения подстроки
+    Dim r As Long
+    Dim formulaPgs As String, formulaPlm As String
+    
+    ' Простая формула: проверяем каждый продукт из списка через COUNTIF с wildcard
+    ' Для множественных продуктов (разделённых ";") используем SUMPRODUCT
+    formulaPgs = "=IF(SUMPRODUCT(COUNTIF(_ProductLists_PGS,""*""&TRIM(MID(SUBSTITUTE([@Продукt],"";"",REPT("" "",100)),(ROW($XFD$1:$XFD$100))-1)*100+1,100)))>0,""да"","""")"
+    formulaPlm = "=IF(SUMPRODUCT(COUNTIF(_ProductLists_PLM,""*""&TRIM(MID(SUBSTITUTE([@Продукт],"";"",REPT("" "",100)),(ROW($XFD$1:$XFD$100))-1)*100+1,100)))>0,""да"","""")"
+    
+    On Error Resume Next
+    If Not nmPgs Is Nothing Then
+        lo.DataBodyRange.Columns(colPgs - lo.Range.Column + 1).Formula = formulaPgs
+    End If
+    If Not nmPlm Is Nothing Then
+        lo.DataBodyRange.Columns(colPlm - lo.Range.Column + 1).Formula = formulaPlm
+    End If
+    On Error GoTo 0
+    
+    ' Пересчитываем лист для применения формул
+    lo.Parent.Calculate
 End Sub
 
 '===============================================================
