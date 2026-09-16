@@ -31,30 +31,34 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     
     Dim wb As Workbook: Set wb = Workbooks.Add
     
-    ' Создаём листы в нужном порядке
+    ' Создаём листы в строгом порядке: Проекты, Статистика, Аналитика, Эталон_Данные, Легенда, СправочникСтатусов, СправочникСостояний, СправочникПродуктов, Ошибки, Выгрузка
     Dim wsProjects As Worksheet, wsStat As Worksheet, wsAnalytics As Worksheet
-    Dim wsLegend As Worksheet, wsManualRef As Worksheet, wsAllowedRef As Worksheet
-    Dim wsProductRef As Worksheet, wsErrors As Worksheet, wsSource As Worksheet
+    Dim wsRefData As Worksheet, wsLegend As Worksheet, wsManualRef As Worksheet
+    Dim wsAllowedRef As Worksheet, wsProductRef As Worksheet, wsErrors As Worksheet, wsSource As Worksheet
     
     Set wsProjects = wb.Sheets(1): wsProjects.name = "Проекты"
     Set wsStat = wb.Sheets.Add(After:=wsProjects): wsStat.name = "Статистика"
     Set wsAnalytics = wb.Sheets.Add(After:=wsStat): wsAnalytics.name = "Аналитика"
-    Set wsLegend = wb.Sheets.Add(After:=wsAnalytics): wsLegend.name = "Легенда"
+    Set wsRefData = wb.Sheets.Add(After:=wsAnalytics): wsRefData.name = "Эталон_Данные"
+    Set wsLegend = wb.Sheets.Add(After:=wsRefData): wsLegend.name = "Легенда"
     Set wsManualRef = wb.Sheets.Add(After:=wsLegend): wsManualRef.name = "СправочникСтатусов"
     Set wsAllowedRef = wb.Sheets.Add(After:=wsManualRef): wsAllowedRef.name = "СправочникСостояний"
     Set wsProductRef = wb.Sheets.Add(After:=wsAllowedRef): wsProductRef.name = "СправочникПродуктов"
     Set wsErrors = wb.Sheets.Add(After:=wsProductRef): wsErrors.name = "Ошибки"
     Set wsSource = wb.Sheets.Add(After:=wsErrors): wsSource.name = "Выгрузка"
     
-    ' Заполняем листы
+    ' === ИЗМЕНЕНИЕ: Сначала создаём все справочные таблицы, особенно тблСправочникПродуктов ===
+    ' Это необходимо, так как формулы в тблПроекты ссылаются на тблСправочникПродуктов
     CreateLegendSheet wsLegend, wb, finalFilePath, currentFilePath
     CreateManualReferenceSheet wsManualRef, wb
     CreateAllowedReferenceSheet wsAllowedRef, wb
-    CreateProjectsSheet wsProjects, wsLegend
+    CreateProductReferenceSheet wb  ' Создаётся ДО CreateProjectsSheet
     CreateErrorsSheet wsErrors
     CreateSourceSheet wsSource
     CreateStatisticsSheet wb, wsStat
-    CreateProductReferenceSheet wb
+    
+    ' === ИЗМЕНЕНИЕ: Теперь создаём тблПроекты после всех справочников ===
+    CreateProjectsSheet wsProjects, wsLegend
     
     ' Применяем стили ко всем таблицам
     Dim wsAny As Worksheet, loAny As ListObject
@@ -353,10 +357,10 @@ NextSourceRow:
         End If
     Next r
     
-    gStep = "Обновление групп ПГС/PLM"
-    ProgressSet 93, "Обновление групп ПГС/PLM..."
-    BuildProductMapping loProjects
-    FillGroupColumns loProjects
+    ' === ИЗМЕНЕНИЕ: Удалены вызовы BuildProductMapping и FillGroupColumns ===
+    ' Столбцы "Группа ПГС" и "Группа PLM" теперь заполняются ТОЛЬКО формулами через SetAllProjectFormulas
+    ' Механизм Calculated Column автоматически распространяет формулы на все строки таблицы
+    ' Вызовы BuildProductMapping/FillGroupColumns записывали данные через .Value, что нарушало принцип формульных столбцов
     
     gStep = "Запись ошибок"
     ProgressSet 96, "Запись ошибок..."
@@ -487,9 +491,9 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
         SetAllProjectFormulas loProjects
     End If
     
-    ' Группы
-    BuildProductMapping loProjects
-    FillGroupColumns loProjects
+    ' === ИЗМЕНЕНИЕ: Удалены вызовы BuildProductMapping и FillGroupColumns ===
+    ' Столбцы "Группа ПГС" и "Группа PLM" теперь заполняются ТОЛЬКО формулами через SetAllProjectFormulas
+    ' Механизм Calculated Column автоматически распространяет формулы на все строки таблицы
     
     ' Статистика
     Dim wsStat As Worksheet
