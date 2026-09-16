@@ -5,6 +5,15 @@ Attribute VB_Name = "ModuleHelpers"
 '===============================================================
 Option Explicit
 
+' Windows API для управления окнами (TopMost)
+Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hwnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+
+Private Const HWND_TOPMOST As LongPtr = -1
+Private Const HWND_NOTOPMOST As LongPtr = -2
+Private Const SWP_NOMOVE As Long = &H2
+Private Const SWP_NOSIZE As Long = &H1
+Private Const SWP_NOACTIVATE As Long = &H10
+
 Public mLastPct As Long
 Public gStep As String
 
@@ -371,6 +380,8 @@ Public Sub ProgressShow()
     On Error GoTo 0
     frmProgress.Show vbModeless
     DoEvents
+    ' Делаем форму TopMost (поверх всех окон)
+    SetWindowPos frmProgress.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOACTIVATE
 End Sub
 
 
@@ -393,6 +404,8 @@ End Sub
 Public Sub ProgressHide()
     On Error Resume Next
     If Not frmProgress Is Nothing Then
+        ' Сбрасываем TopMost перед выгрузкой формы
+        SetWindowPos frmProgress.hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOACTIVATE
         Unload frmProgress
         Set frmProgress = Nothing  ' Явное освобождение ссылки на форму
     End If
