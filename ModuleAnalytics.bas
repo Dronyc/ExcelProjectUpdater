@@ -47,17 +47,19 @@ Public Sub CreateAnalyticsStructure(ByVal rootFolder As String)
     If wb Is Nothing Then Err.Raise vbObjectError + 30, , "Не удалось открыть: " & finalPath
     
     ' Удаление старых листов аналитики
+    ' ИСПРАВЛЕНИЕ: Удалено удаление базовых справочных листов (СправочникПродуктов, Проекты и др.)
+    ' чтобы не разрушать формулы в тблПроекты, ссылающиеся на тблСправочникПродуктов
     LogStep "Удаление старых листов аналитики"
     DeleteSheetIfExists wb, "_Сводная v1+"
     DeleteSheetIfExists wb, "Сводная статистика"
     DeleteSheetIfExists wb, SHEET_ANALYTICS
     DeleteSheetIfExists wb, SHEET_REFERENCE_DATA
-    DeleteSheetIfExists wb, SHEET_PRODUCT_REF
+    ' Строка удаления SHEET_PRODUCT_REF удалена - этот лист создаётся в CreateProjectFiles
+    ' и не должен удаляться/пересоздаваться в CreateAnalyticsStructure
     
-    ' Создание СправочникПродуктов
-    LogStep "Создание СправочникПродуктов"
-    ProgressSet 50, "Создание справочника продуктов..."
-    ModuleBuilder.CreateProductReferenceSheet wb
+    ' ИСПРАВЛЕНИЕ: Удалено повторное создание СправочникПродуктов
+    ' Этот лист уже гарантированно создан на этапе CreateProjectFiles
+    ' Вызов ModuleBuilder.CreateProductReferenceSheet wb удалён
     
     ' Создание листа Эталон_Данные (пустой шаблон)
     LogStep "Создание листа Эталон_Данные"
@@ -171,9 +173,11 @@ Public Sub UpgradeAnalyticsStructure(ByVal rootFolder As String)
     LogStep "Пересоздание структуры Аналитика"
     RecreateAnalyticsStructure wb
     
-    ' Синхронизация СправочникПродуктов
-    LogStep "Синхронизация СправочникПродуктов"
-    ModuleBuilder.CreateProductReferenceSheet wb
+    ' ИСПРАВЛЕНИЕ: Удалена синхронизация СправочникПродуктов
+    ' Эта процедура (UpgradeAnalyticsStructure) предназначена ТОЛЬКО для обновления
+    ' листов Аналитика и Эталон_Данные, не трогая базовые справочники
+    ' СправочникПродуктов уже существует и не должен пересоздаваться здесь
+    ' Вызов ModuleBuilder.CreateProductReferenceSheet wb удалён
     
     ' Пересчёт
     LogStep "Пересчёт формул"
