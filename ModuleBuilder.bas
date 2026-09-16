@@ -590,82 +590,85 @@ End Sub
 
 '===============================================================
 ' КАРТА ПРОДУКТОВ И ГРУППЫ ПГС/PLM
+' УСТАРЕВШИЕ ПРОЦЕДУРЫ - ЗАКОММЕНТИРОВАНЫ
+' Эти процедуры записывали данные через .Value в столбцы "Группа ПГС" и "Группа PLM",
+' что нарушало принцип формульных столбцов. Теперь эти столбцы заполняются ТОЛЬКО
+' через механизм Calculated Column из SetAllProjectFormulas.
 '===============================================================
-Public Sub BuildProductMapping(ByVal srcLo As ListObject)
-    Dim wsSet As Worksheet
-    Set wsSet = Nothing
-    On Error Resume Next: Set wsSet = ThisWorkbook.Worksheets("Настройки"): On Error GoTo 0
-    If wsSet Is Nothing Then Exit Sub
-    
-    Dim keep As Collection: Set keep = New Collection
-    Dim lastRow As Long: lastRow = wsSet.Cells(wsSet.Rows.count, 4).End(xlUp).row
-    Dim i As Long, prod As String
-    For i = 2 To lastRow
-        prod = Trim(CStr(wsSet.Cells(i, 4).value))
-        If Len(prod) > 0 Then
-            If Not CollectionHasKey(keep, "K|" & prod) Then keep.Add CStr(wsSet.Cells(i, 5).value), "K|" & prod
-        End If
-    Next i
-    
-    Dim all As Collection: Set all = New Collection
-    Dim expCol As Collection: Set expCol = CollectProductsFromExport()
-    Dim vItem As Variant
-    For Each vItem In expCol
-        If Not CollectionHasKey(all, "K|" & CStr(vItem)) Then all.Add CStr(vItem), "K|" & CStr(vItem)
-    Next vItem
-    
-    If Not srcLo Is Nothing Then
-        If Not srcLo.DataBodyRange Is Nothing Then
-            Dim colIdx As Long: colIdx = srcLo.ListColumns("Продукт").Index
-            Dim r As Long, parts() As String, t As Long, pt As String
-            For r = 1 To srcLo.DataBodyRange.Rows.count
-                parts = Split(Trim(CStr(srcLo.DataBodyRange.Cells(r, colIdx).value)), ";")
-                For t = 0 To UBound(parts)
-                    pt = Trim(parts(t))
-                    If Len(pt) > 0 Then
-                        If Not CollectionHasKey(all, "K|" & pt) Then all.Add pt, "K|" & pt
-                    End If
-                Next t
-            Next r
-        End If
-    End If
-    
-    Dim n As Long: n = all.count
-    
-    ' === ИСПРАВЛЕНИЕ: проверка на пустую коллекцию ===
-    If n = 0 Then
-        LogStep "BuildProductMapping: нет продуктов для обработки"
-        Exit Sub
-    End If
-    
-    Dim arr() As String: ReDim arr(1 To n)
-    Dim k As Long: k = 0
-    For Each vItem In all: k = k + 1: arr(k) = CStr(vItem): Next vItem
-    
-    Dim a As Long, b As Long, tmp As String
-    For a = 1 To n - 1
-        For b = a + 1 To n
-            If arr(b) < arr(a) Then tmp = arr(a): arr(a) = arr(b): arr(b) = tmp
-        Next b
-    Next a
-    
-    wsSet.Columns("D:E").ClearContents
-    wsSet.Range("D1").value = "Продукт": wsSet.Range("E1").value = "Группа (ПГС / PLM)"
-    wsSet.Range("D1:E1").Font.Bold = True
-    For i = 1 To n
-        wsSet.Cells(i + 1, 4).value = arr(i)
-        If CollectionHasKey(keep, "K|" & arr(i)) Then wsSet.Cells(i + 1, 5).value = keep.item("K|" & arr(i))
-    Next i
-    
-    If n > 0 Then
-        With wsSet.Range(wsSet.Cells(2, 5), wsSet.Cells(n + 1, 5)).Validation
-            .Delete
-            .Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:="ПГС,PLM"
-            .IgnoreBlank = True: .InCellDropdown = True
-        End With
-    End If
-    wsSet.Columns("D").ColumnWidth = 30: wsSet.Columns("E").ColumnWidth = 18
-End Sub
+'Public Sub BuildProductMapping(ByVal srcLo As ListObject)
+'    Dim wsSet As Worksheet
+'    Set wsSet = Nothing
+'    On Error Resume Next: Set wsSet = ThisWorkbook.Worksheets("Настройки"): On Error GoTo 0
+'    If wsSet Is Nothing Then Exit Sub
+'    
+'    Dim keep As Collection: Set keep = New Collection
+'    Dim lastRow As Long: lastRow = wsSet.Cells(wsSet.Rows.count, 4).End(xlUp).row
+'    Dim i As Long, prod As String
+'    For i = 2 To lastRow
+'        prod = Trim(CStr(wsSet.Cells(i, 4).value))
+'        If Len(prod) > 0 Then
+'            If Not CollectionHasKey(keep, "K|" & prod) Then keep.Add CStr(wsSet.Cells(i, 5).value), "K|" & prod
+'        End If
+'    Next i
+'    
+'    Dim all As Collection: Set all = New Collection
+'    Dim expCol As Collection: Set expCol = CollectProductsFromExport()
+'    Dim vItem As Variant
+'    For Each vItem In expCol
+'        If Not CollectionHasKey(all, "K|" & CStr(vItem)) Then all.Add CStr(vItem), "K|" & CStr(vItem)
+'    Next vItem
+'    
+'    If Not srcLo Is Nothing Then
+'        If Not srcLo.DataBodyRange Is Nothing Then
+'            Dim colIdx As Long: colIdx = srcLo.ListColumns("Продукт").Index
+'            Dim r As Long, parts() As String, t As Long, pt As String
+'            For r = 1 To srcLo.DataBodyRange.Rows.count
+'                parts = Split(Trim(CStr(srcLo.DataBodyRange.Cells(r, colIdx).value)), ";")
+'                For t = 0 To UBound(parts)
+'                    pt = Trim(parts(t))
+'                    If Len(pt) > 0 Then
+'                        If Not CollectionHasKey(all, "K|" & pt) Then all.Add pt, "K|" & pt
+'                    End If
+'                Next t
+'            Next r
+'        End If
+'    End If
+'    
+'    Dim n As Long: n = all.count
+'    
+'    If n = 0 Then
+'        LogStep "BuildProductMapping: нет продуктов для обработки"
+'        Exit Sub
+'    End If
+'    
+'    Dim arr() As String: ReDim arr(1 To n)
+'    Dim k As Long: k = 0
+'    For Each vItem In all: k = k + 1: arr(k) = CStr(vItem): Next vItem
+'    
+'    Dim a As Long, b As Long, tmp As String
+'    For a = 1 To n - 1
+'        For b = a + 1 To n
+'            If arr(b) < arr(a) Then tmp = arr(a): arr(a) = arr(b): arr(b) = tmp
+'        Next b
+'    Next a
+'    
+'    wsSet.Columns("D:E").ClearContents
+'    wsSet.Range("D1").value = "Продукт": wsSet.Range("E1").value = "Группа (ПГС / PLM)"
+'    wsSet.Range("D1:E1").Font.Bold = True
+'    For i = 1 To n
+'        wsSet.Cells(i + 1, 4).value = arr(i)
+'        If CollectionHasKey(keep, "K|" & arr(i)) Then wsSet.Cells(i + 1, 5).value = keep.item("K|" & arr(i))
+'    Next i
+'    
+'    If n > 0 Then
+'        With wsSet.Range(wsSet.Cells(2, 5), wsSet.Cells(n + 1, 5)).Validation
+'            .Delete
+'            .Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:="ПГС,PLM"
+'            .IgnoreBlank = True: .InCellDropdown = True
+'        End With
+'    End If
+'    wsSet.Columns("D").ColumnWidth = 30: wsSet.Columns("E").ColumnWidth = 18
+'End Sub
 
 Private Function CollectProductsFromExport() As Collection
     Dim res As Collection: Set res = New Collection
@@ -701,51 +704,51 @@ Private Function CollectProductsFromExport() As Collection
     Set CollectProductsFromExport = res
 End Function
 
-Public Sub FillGroupColumns(ByVal lo As ListObject)
-    If lo Is Nothing Or lo.DataBodyRange Is Nothing Then Exit Sub
-    Dim wsSet As Worksheet
-    Set wsSet = Nothing
-    On Error Resume Next: Set wsSet = ThisWorkbook.Worksheets("Настройки"): On Error GoTo 0
-    If wsSet Is Nothing Then Exit Sub
-    
-    Dim colProd As Long, colPgs As Long, colPlm As Long
-    On Error Resume Next
-    colProd = lo.ListColumns("Продукт").Index
-    colPgs = lo.ListColumns("Группа ПГС").Index
-    colPlm = lo.ListColumns("Группа PLM").Index
-    On Error GoTo 0
-    If colProd = 0 Or colPgs = 0 Or colPlm = 0 Then Exit Sub
-    
-    Dim mapPgs As Collection: Set mapPgs = New Collection
-    Dim mapPlm As Collection: Set mapPlm = New Collection
-    Dim lastRow As Long: lastRow = wsSet.Cells(wsSet.Rows.count, 4).End(xlUp).row
-    Dim i As Long, prod As String, grp As String
-    For i = 2 To lastRow
-        prod = Trim(CStr(wsSet.Cells(i, 4).value)): grp = Trim(CStr(wsSet.Cells(i, 5).value))
-        If Len(prod) > 0 Then
-            If InStr(1, grp, "ПГС", vbTextCompare) > 0 Then
-                If Not CollectionHasKey(mapPgs, "K|" & prod) Then mapPgs.Add True, "K|" & prod
-            End If
-            If InStr(1, grp, "PLM", vbTextCompare) > 0 Then
-                If Not CollectionHasKey(mapPlm, "K|" & prod) Then mapPlm.Add True, "K|" & prod
-            End If
-        End If
-    Next i
-    
-    Dim r As Long, parts() As String, t As Long, pt As String
-    Dim isPgs As Boolean, isPlm As Boolean
-    For r = 1 To lo.DataBodyRange.Rows.count
-        isPgs = False: isPlm = False
-        parts = Split(Trim(CStr(lo.DataBodyRange.Cells(r, colProd).value)), ";")
-        For t = 0 To UBound(parts)
-            pt = Trim(parts(t))
-            If CollectionHasKey(mapPgs, "K|" & pt) Then isPgs = True
-            If CollectionHasKey(mapPlm, "K|" & pt) Then isPlm = True
-        Next t
-        If isPgs Then lo.DataBodyRange.Cells(r, colPgs).value = "да" Else lo.DataBodyRange.Cells(r, colPgs).value = ""
-        If isPlm Then lo.DataBodyRange.Cells(r, colPlm).value = "да" Else lo.DataBodyRange.Cells(r, colPlm).value = ""
-    Next r
-End Sub
+'Public Sub FillGroupColumns(ByVal lo As ListObject)
+'    If lo Is Nothing Or lo.DataBodyRange Is Nothing Then Exit Sub
+'    Dim wsSet As Worksheet
+'    Set wsSet = Nothing
+'    On Error Resume Next: Set wsSet = ThisWorkbook.Worksheets("Настройки"): On Error GoTo 0
+'    If wsSet Is Nothing Then Exit Sub
+'    
+'    Dim colProd As Long, colPgs As Long, colPlm As Long
+'    On Error Resume Next
+'    colProd = lo.ListColumns("Продукт").Index
+'    colPgs = lo.ListColumns("Группа ПГС").Index
+'    colPlm = lo.ListColumns("Группа PLM").Index
+'    On Error GoTo 0
+'    If colProd = 0 Or colPgs = 0 Or colPlm = 0 Then Exit Sub
+'    
+'    Dim mapPgs As Collection: Set mapPgs = New Collection
+'    Dim mapPlm As Collection: Set mapPlm = New Collection
+'    Dim lastRow As Long: lastRow = wsSet.Cells(wsSet.Rows.count, 4).End(xlUp).row
+'    Dim i As Long, prod As String, grp As String
+'    For i = 2 To lastRow
+'        prod = Trim(CStr(wsSet.Cells(i, 4).value)): grp = Trim(CStr(wsSet.Cells(i, 5).value))
+'        If Len(prod) > 0 Then
+'            If InStr(1, grp, "ПГС", vbTextCompare) > 0 Then
+'                If Not CollectionHasKey(mapPgs, "K|" & prod) Then mapPgs.Add True, "K|" & prod
+'            End If
+'            If InStr(1, grp, "PLM", vbTextCompare) > 0 Then
+'                If Not CollectionHasKey(mapPlm, "K|" & prod) Then mapPlm.Add True, "K|" & prod
+'            End If
+'        End If
+'    Next i
+'    
+'    Dim r As Long, parts() As String, t As Long, pt As String
+'    Dim isPgs As Boolean, isPlm As Boolean
+'    For r = 1 To lo.DataBodyRange.Rows.count
+'        isPgs = False: isPlm = False
+'        parts = Split(Trim(CStr(lo.DataBodyRange.Cells(r, colProd).value)), ";")
+'        For t = 0 To UBound(parts)
+'            pt = Trim(parts(t))
+'            If CollectionHasKey(mapPgs, "K|" & pt) Then isPgs = True
+'            If CollectionHasKey(mapPlm, "K|" & pt) Then isPlm = True
+'        Next t
+'        If isPgs Then lo.DataBodyRange.Cells(r, colPgs).value = "да" Else lo.DataBodyRange.Cells(r, colPgs).value = ""
+'        If isPlm Then lo.DataBodyRange.Cells(r, colPlm).value = "да" Else lo.DataBodyRange.Cells(r, colPlm).value = ""
+'    Next r
+'End Sub
 
 '===============================================================
 ' СПРАВОЧНИК ПРОДУКТОВ В ИТОГОВОМ ФАЙЛЕ
@@ -756,17 +759,26 @@ Public Sub CreateProductReferenceSheet(ByVal wb As Workbook)
     Set wsRef = Nothing
     On Error Resume Next: Set wsRef = wb.Worksheets("СправочникПродуктов"):
     On Error GoTo 0
-    If wsRef Is Nothing Then
+    
+    ' === ИЗМЕНЕНИЕ: Принудительно удаляем любые ListObject с именами, содержащими "тблСправочникПродуктов" ===
+    ' Это гарантирует создание таблицы с точным целевым именем (без _1, _2 и т.д.)
+    If Not wsRef Is Nothing Then
+        Dim loToDelete As ListObject
+        Dim i As Long
+        For i = wsRef.ListObjects.count To 1 Step -1
+            Set loToDelete = wsRef.ListObjects(i)
+            If InStr(1, loToDelete.name, "тблСправочникПродуктов", vbTextCompare) > 0 Then
+                loToDelete.Delete
+                LogStep "Удалена таблица: " & loToDelete.name
+            End If
+        Next i
+        wsRef.Cells.Clear
+    Else
         Set wsRef = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.count))
         wsRef.name = "СправочникПродуктов"
         LogStep "Лист СправочникПродуктов создан"
-    Else
-        wsRef.Cells.Clear
-        Do While wsRef.ListObjects.count > 0
-            wsRef.ListObjects(1).Delete:
-        Loop
-        LogStep "Лист СправочникПродуктов очищен"
     End If
+    
     wsRef.Range("A1").value = "Продукт": wsRef.Range("B1").value = "Группа"
     wsRef.Range("A1:B1").Font.Bold = True
     
@@ -792,6 +804,7 @@ Public Sub CreateProductReferenceSheet(ByVal wb As Workbook)
         Dim lo As ListObject
         Set lo = wsRef.ListObjects.Add(xlSrcRange, wsRef.Range("A1:B" & (outRow - 1)), , xlYes)
         lo.name = "тблСправочникПродуктов": lo.tableStyle = "TableStyleMedium15"
+        LogStep "Создана таблица тблСправочникПродуктов"
     End If
     wsRef.Columns("A").ColumnWidth = 40: wsRef.Columns("B").ColumnWidth = 20
     LogStep "CreateProductReferenceSheet: завершено"
