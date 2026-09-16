@@ -19,6 +19,20 @@ Private lblBack As MSForms.label
 Private lblFill As MSForms.label
 Private lblPct As MSForms.label
 
+' API declaration for setting window on top
+Private Declare PtrSafe Function SetWindowPos Lib "user32" ( _
+    ByVal hwnd As LongPtr, _
+    ByVal hWndInsertAfter As LongPtr, _
+    ByVal X As Long, _
+    ByVal Y As Long, _
+    ByVal cx As Long, _
+    ByVal cy As Long, _
+    ByVal wFlags As Long) As Long
+
+Private Const HWND_TOPMOST As LongPtr = -1
+Private Const SWP_NOMOVE As Long = &H2
+Private Const SWP_NOSIZE As Long = &H1
+
 Private Sub UserForm_Initialize()
     Me.Caption = "Обновление проектов"
     Me.Width = 420
@@ -45,6 +59,9 @@ Private Sub UserForm_Initialize()
     lblPct.Left = 12: lblPct.Top = 78
     lblPct.Width = 380: lblPct.Height = 16
     lblPct.Caption = "0%"
+    
+    ' Make the form topmost so it stays above all other windows
+    SetWindowPos Me.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE
 End Sub
 
 Public Sub SetProgress(ByVal pct As Double, ByVal comment As String)
