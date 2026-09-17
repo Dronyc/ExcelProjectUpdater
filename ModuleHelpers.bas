@@ -370,6 +370,7 @@ Public Sub ProgressShow()
     End If
     On Error GoTo 0
     frmProgress.Show vbModeless
+    ThisWorkbook.Activate
     DoEvents
 End Sub
 
@@ -379,6 +380,7 @@ Public Sub ProgressSet(ByVal pct As Double, ByVal comment As String)
     frmProgress.SetProgress pct / 100, comment
     On Error GoTo 0
     mLastPct = Int(pct)
+    ThisWorkbook.Activate
     DoEvents
 End Sub
 
