@@ -505,6 +505,7 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
         Set wsStat = wb.Worksheets.Add(After:=wsProjects)
         wsStat.name = "Статистика"
     End If
+    LogStep "Вызов обновления листа Статистика..."
     CreateStatisticsSheet wb, wsStat
     
     ' Сохранение цветов
