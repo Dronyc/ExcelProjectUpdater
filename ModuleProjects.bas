@@ -366,6 +366,19 @@ NextSourceRow:
     ProgressSet 96, "Запись ошибок..."
     WriteErrorsToWorkbook wbTarget, errorsCol
     
+    gStep = "Обновление статистики"
+    ProgressSet 97, "Обновление статистики..."
+    Dim wsStat As Worksheet
+    Set wsStat = Nothing
+    On Error Resume Next
+    Set wsStat = wbTarget.Worksheets("Статистика")
+    On Error GoTo UpdateFail
+    If wsStat Is Nothing Then
+        Set wsStat = wbTarget.Worksheets.Add(After:=wbTarget.Worksheets(1))
+        wsStat.name = "Статистика"
+    End If
+    CreateStatisticsSheet wbTarget, wsStat
+    
     gStep = "Сохранение результата"
     ProgressSet 98, "Сохранение..."
     If targetPath = finalPath Then
