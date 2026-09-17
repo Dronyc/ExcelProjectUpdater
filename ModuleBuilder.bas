@@ -814,6 +814,7 @@ End Sub
 ' СТАТИСТИКА (перенесена из Module1 без изменений)
 '===============================================================
 Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
+    LogStep "CreateStatisticsSheet: ПРОЦЕДУРА НАЧАЛА ВЫПОЛНЕНИЕ"
     ' Код CreateStatistics из Module1 (без изменений)
     ' Вставьте сюда полный код процедуры CreateStatistics из Module1
     ' (он слишком большой, чтобы дублировать здесь — используйте существующий код)
