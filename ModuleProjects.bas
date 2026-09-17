@@ -101,7 +101,6 @@ Public Sub UpdateProjectsFromExport(ByVal rootFolder As String)
     currentPath = rootFolder & "Выгрузка проектов_current.xlsx"
     
     gStep = "Проверка файлов"
-    gStep = "Проверка файлов"
     If Len(Dir(sourcePath)) = 0 Then
         MsgBox "Файл выгрузки не найден:" & vbCrLf & sourcePath & vbCrLf & vbCrLf & _
                "Поместите файл ""Выгрузка проектов_export.xlsx"" в рабочую папку и повторите запуск.", vbExclamation
@@ -157,6 +156,10 @@ Public Sub UpdateProjectsFromExport(ByVal rootFolder As String)
     ProgressSet 20, "Чтение данных выгрузки..."
     On Error Resume Next
     wsSource.Columns(colIdx(3)).ColumnWidth = 40
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось изменить ширину столбца " & colIdx(3) & ". Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo UpdateFail
     
     Dim dataRange As Range
@@ -186,18 +189,33 @@ Public Sub UpdateProjectsFromExport(ByVal rootFolder As String)
     If stepSize < 1 Then stepSize = 1
     Dim nextUpdate As Long: nextUpdate = stepSize
     
+    ' === ИЗМЕНЕНИЕ: Добавлено логирование каждые 100 итераций в цикле анализа ===
     For r = 1 To rowCount
         If r >= nextUpdate Or r = rowCount Then
             ProgressSmooth 25 + (CDbl(r) / rowCount) * 20, "Анализ строк (" & r & " из " & rowCount & ")..."
             nextUpdate = r + stepSize
         End If
         
+        ' Логирование каждые 100 итераций
+        If r Mod 100 = 0 Then
+            gStep = "Анализ данных: строка " & r
+            LogStep gStep
+        End If
+        
+        On Error Resume Next
         srcValid(r) = False: srcProcessed(r) = False
         If IsEmptySourceRow(srcValues, r, colIdx) Then GoTo NextSourceRow
         
         codeText = GetCodeText(srcValues(r, colIdx(3)))
         nameText = GetCleanText(srcValues(r, colIdx(5)))
         parsedDate = ParseRuDateTime(srcValues(r, colIdx(2)))
+        
+        If Err.Number <> 0 Then
+            LogStep "Ошибка в цикле анализа: строка " & r & ", ключ=" & key & ", ошибка: " & Err.description
+            Err.Clear
+            GoTo NextSourceRow
+        End If
+        On Error GoTo UpdateFail
         
         If IsEmpty(parsedDate) Then
             AddErrorToCollection errorsCol, "Ошибка даты", "", codeText, nameText, "Пустая или некорректная дата", "Выгрузка проектов_export.xlsx"
@@ -299,12 +317,20 @@ NextSourceRow:
     updatedCount = 0: addedCount = 0
     nextUpdate = stepSize
     
+    ' === ИЗМЕНЕНИЕ: Добавлено логирование и обработка ошибок в цикле обновления ===
     For r = 1 To rowCount
         If r >= nextUpdate Or r = rowCount Then
             ProgressSmooth 70 + (CDbl(r) / rowCount) * 10, "Обновление (" & r & " из " & rowCount & ")..."
             nextUpdate = r + stepSize
         End If
         
+        ' Логирование каждые 100 итераций
+        If r Mod 100 = 0 Then
+            gStep = "Обновление существующих проектов: строка " & r
+            LogStep gStep
+        End If
+        
+        On Error Resume Next
         If srcValid(r) And Not srcProcessed(r) Then
             key = srcKey(r)
             If CollectionHasKey(existingKeys, key) Then
@@ -320,6 +346,16 @@ NextSourceRow:
                 End If
             End If
         End If
+        
+        If Err.Number <> 0 Then
+            LogStep "Ошибка в цикле обновления: строка " & r & ", ключ=" & key & ", ошибка: " & Err.description
+            Err.Clear
+            On Error GoTo UpdateFail
+            GoTo ContinueUpdateLoop
+        End If
+        On Error GoTo UpdateFail
+        
+ContinueUpdateLoop:
     Next r
     
     ' Защита от массового дублирования
@@ -344,18 +380,69 @@ NextSourceRow:
     gStep = "Добавление новых проектов..."
     ProgressSet 85, "Добавление новых проектов..."
     nextUpdate = stepSize
+    
+    ' === ИЗМЕНЕНИЕ: Добавлено логирование и обработка ошибок в цикле добавления ===
     For r = 1 To rowCount
         If r >= nextUpdate Or r = rowCount Then
             ProgressSmooth 85 + (CDbl(r) / rowCount) * 7, "Добавление (" & r & " из " & rowCount & ")..."
             nextUpdate = r + stepSize
         End If
         
+        ' Логирование каждые 100 итераций
+        If r Mod 100 = 0 Then
+            gStep = "Добавление новых проектов: строка " & r
+            LogStep gStep
+        End If
+        
+        On Error Resume Next
         If srcValid(r) And Not srcProcessed(r) Then
             Set lr = loProjects.ListRows.Add
             WriteSourceRowToListRow loProjects, lr, srcValues, r, colIdx, srcDate(r), srcCode(r)
             srcProcessed(r) = True: addedCount = addedCount + 1
         End If
+        
+        If Err.Number <> 0 Then
+            LogStep "Ошибка в цикле добавления: строка " & r & ", ключ=" & key & ", ошибка: " & Err.description
+            Err.Clear
+            On Error GoTo UpdateFail
+            GoTo ContinueAddLoop
+        End If
+        On Error GoTo UpdateFail
+        
+ContinueAddLoop:
     Next r
+    
+    ' === ИЗМЕНЕНИЕ: Принудительное применение формул после добавления строк ===
+    ' Обеспечиваем применение формул в столбцах FORMULA_COLUMNS таблицы тблПроекты
+    gStep = "Применение формул в таблице"
+    LogStep "Принудительный пересчет формул для тблПроекты"
+    
+    ' Включаем авто-расширение диапазона списка для корректного применения Calculated Columns
+    On Error Resume Next
+    Application.AutoCorrect.AutoExpandListRange = True
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось установить AutoExpandListRange. Ошибка: " & Err.description
+        Err.Clear
+    End If
+    On Error GoTo UpdateFail
+    
+    ' Принудительно вызываем пересчет формул для всей таблицы
+    On Error Resume Next
+    loProjects.Range.Calculate
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось пересчитать формулы таблицы. Ошибка: " & Err.description
+        Err.Clear
+    End If
+    On Error GoTo UpdateFail
+    
+    ' Дополнительный полный пересчет для гарантии применения формул
+    On Error Resume Next
+    Application.CalculateFull
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось выполнить CalculateFull. Ошибка: " & Err.description
+        Err.Clear
+    End If
+    On Error GoTo UpdateFail
     
     ' === ИЗМЕНЕНИЕ: Удалены вызовы BuildProductMapping и FillGroupColumns ===
     ' Столбцы "Группа ПГС" и "Группа PLM" теперь заполняются ТОЛЬКО формулами через SetAllProjectFormulas
@@ -376,7 +463,15 @@ NextSourceRow:
     
     On Error Resume Next
     DeleteFileIfExists currentPath
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось удалить currentPath. Ошибка: " & Err.description
+        Err.Clear
+    End If
     wbTarget.SaveCopyAs currentPath
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось сохранить копию currentPath. Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo UpdateFail
     
     wbTarget.Close SaveChanges:=False: Set wbTarget = Nothing
@@ -390,6 +485,10 @@ NextSourceRow:
     On Error Resume Next
     Name sourcePath As archiveSourcePath
     If Err.Number = 0 Then moveOk = True
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось переместить файл выгрузки в архив. Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo UpdateFail
     
     ProgressHide
@@ -418,7 +517,15 @@ UpdateFail:
     ' Корректное освобождение объектов даже при ошибке
     On Error Resume Next
     If Not wbSource Is Nothing Then wbSource.Close SaveChanges:=False
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось закрыть wbSource. Ошибка: " & Err.description
+        Err.Clear
+    End If
     If Not wbTarget Is Nothing Then wbTarget.Close SaveChanges:=False
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось закрыть wbTarget. Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo UpdateFail
     
     ' Явное освобождение ссылок на объекты
@@ -470,6 +577,10 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     Set lcLink = Nothing
     On Error Resume Next
     Set lcLink = loProjects.ListColumns("Дубль ссылки")
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось проверить наличие столбца 'Дубль ссылки'. Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo 0
     If lcLink Is Nothing Then
         Dim posLink As Long: posLink = loProjects.ListColumns("Дубль кода").Index + 1
@@ -500,6 +611,10 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     Set wsStat = Nothing
     On Error Resume Next
     Set wsStat = wb.Worksheets("Статистика")
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось получить доступ к листу 'Статистика'. Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo 0
     If wsStat Is Nothing Then
         Set wsStat = wb.Worksheets.Add(After:=wsProjects)
@@ -523,7 +638,15 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     Dim currentPath As String: currentPath = rootFolder & "Выгрузка проектов_current.xlsx"
     On Error Resume Next
     DeleteFileIfExists currentPath
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось удалить currentPath в UpgradeProjectsLogic. Ошибка: " & Err.description
+        Err.Clear
+    End If
     wb.SaveCopyAs currentPath
+    If Err.Number <> 0 Then
+        LogStep "Предупреждение: не удалось сохранить копию currentPath в UpgradeProjectsLogic. Ошибка: " & Err.description
+        Err.Clear
+    End If
     On Error GoTo 0
     
     wb.Close SaveChanges:=False: Set wb = Nothing
