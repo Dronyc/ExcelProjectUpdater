@@ -1597,16 +1597,34 @@ End Sub
 ' Таблица качества по человеку/полю
 '===============================================================
 Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByRef lastUsedRow As Long)
-    ' Код FillPersonTable из Module1 (без изменений)
-
+    LogStep "FillPersonTable: начало для поля '" & fieldName & "'"
     lastUsedRow = startRow
+    
     Dim lo As ListObject
+    On Error Resume Next
     Set lo = wb.Worksheets("Проекты").ListObjects("тблПроекты")
-    If lo Is Nothing Then Exit Sub
-    If lo.DataBodyRange Is Nothing Then Exit Sub
+    On Error GoTo 0
+    
+    If lo Is Nothing Then
+        LogStep "FillPersonTable: тблПроекты не найдена. Выход."
+        Exit Sub
+    End If
+    
+    If lo.DataBodyRange Is Nothing Then
+        LogStep "FillPersonTable: тблПроекты пуста (нет строк данных). Выход."
+        Exit Sub
+    End If
 
     Dim colIdx As Long
+    On Error Resume Next
     colIdx = lo.ListColumns(fieldName).Index
+    On Error GoTo 0
+    
+    If colIdx = 0 Then
+        LogStep "FillPersonTable: Столбец '" & fieldName & "' не найден в тблПроекты. Выход."
+        Exit Sub
+    End If
+
     Dim n As Long
     n = lo.DataBodyRange.Rows.count
 
@@ -1616,6 +1634,7 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
     ReDim vals(1 To n)
     Dim m As Long
     m = 0
+    
     Dim i As Long
     Dim v As String
     For i = 1 To n
@@ -1628,11 +1647,15 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
             End If
         End If
     Next i
-    If m = 0 Then Exit Sub
+    
+    If m = 0 Then
+        LogStep "FillPersonTable: Поле '" & fieldName & "' не содержит заполненных значений. Таблица не создана."
+        Exit Sub
+    End If
 
-    Dim a As Long
-    Dim b As Long
-    Dim t As String
+    LogStep "FillPersonTable: Найдено " & m & " уникальных значений для '" & fieldName & "'. Создание таблицы..."
+
+    Dim a As Long, b As Long, t As String
     For a = 1 To m - 1
         For b = a + 1 To m
             If vals(b) < vals(a) Then
@@ -1659,7 +1682,7 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
         ws.Cells(r, baseCol).value = vals(i)
         ws.Cells(r, baseCol + 1).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Дата создания],""<>"")"
         ws.Cells(r, baseCol + 2).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],0)"
-        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],"">0"")"
+        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],">0"")"
         ws.Cells(r, baseCol + 4).formula = "=IF(" & colLetter(baseCol + 1) & r & "=0,""""," & colLetter(baseCol + 2) & r & "/" & colLetter(baseCol + 1) & r & ")"
     Next i
 
@@ -1676,32 +1699,30 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
 
     ApplyBorders ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + m, baseCol + 4))
 
-    If m > 0 Then
-        Dim tblName As String
-        Select Case fieldName
-            Case "Автор": tblName = "тблСтатАвторы"
-            Case "Куратор": tblName = "тблСтатКураторы"
-            Case "Менеджер ОП": tblName = "тблСтатМенеджеры"
-            Case "Руководитель проекта": tblName = "тблСтатРП"
-            Case Else: tblName = "тблСтат" & fieldName
-        End Select
+    Dim tblName As String
+    Select Case fieldName
+        Case "Автор": tblName = "тблСтатАвторы"
+        Case "Куратор": tblName = "тблСтатКураторы"
+        Case "Менеджер ОП": tblName = "тблСтатМенеджеры"
+        Case "Руководитель проекта": tblName = "тблСтатРП"
+        Case Else: tblName = "тблСтат" & Replace(fieldName, " ", "")
+    End Select
 
-        Dim tblRange As Range
-        Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + m, baseCol + 4))
-        Dim loOld As ListObject
-        On Error Resume Next
-        Set loOld = ws.ListObjects(tblName)
-        If Not loOld Is Nothing Then loOld.Delete
-        On Error GoTo 0
+    Dim tblRange As Range
+    Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + m, baseCol + 4))
+    Dim loOld As ListObject
+    On Error Resume Next
+    Set loOld = ws.ListObjects(tblName)
+    If Not loOld Is Nothing Then loOld.Delete
+    On Error GoTo 0
 
-        Dim loNew As ListObject
-        Set loNew = ws.ListObjects.Add(xlSrcRange, tblRange, , xlYes)
-        loNew.name = tblName
-        loNew.tableStyle = "TableStyleLight13"
-        loNew.ShowAutoFilterDropDown = True
-    End If
-    'lastUsedRow = startRow + 1 + m
-
-    lastUsedRow = startRow
+    Dim loNew As ListObject
+    Set loNew = ws.ListObjects.Add(xlSrcRange, tblRange, , xlYes)
+    loNew.name = tblName
+    loNew.tableStyle = "TableStyleLight13"
+    loNew.ShowAutoFilterDropDown = True
+    
+    lastUsedRow = startRow + m + 1
+    LogStep "FillPersonTable: завершено для '" & fieldName & "'. lastUsedRow установлен в " & lastUsedRow
 End Sub
 
