@@ -1682,7 +1682,7 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
         ws.Cells(r, baseCol).value = vals(i)
         ws.Cells(r, baseCol + 1).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Дата создания],""<>"")"
         ws.Cells(r, baseCol + 2).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],0)"
-        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],">0"")"
+        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],"">0"")"
         ws.Cells(r, baseCol + 4).formula = "=IF(" & colLetter(baseCol + 1) & r & "=0,""""," & colLetter(baseCol + 2) & r & "/" & colLetter(baseCol + 1) & r & ")"
     Next i
 
