@@ -1691,10 +1691,10 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
     For i = 1 To m
         r = startRow + 1 + i
         ws.Cells(r, baseCol).value = vals(i)
-        ws.Cells(r, baseCol + 1).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Дата создания],\"<>\")"
+        ws.Cells(r, baseCol + 1).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Дата создания],""<>"")"
         ws.Cells(r, baseCol + 2).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],0)"
-        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],\">0\")"
-        ws.Cells(r, baseCol + 4).formula = "=IF(" & colLetter(baseCol + 1) & r & "=0,\"\",\" & colLetter(baseCol + 2) & r & "/" & colLetter(baseCol + 1) & r & ")"
+        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],"">0"")"
+        ws.Cells(r, baseCol + 4).formula = "=IF(" & colLetter(baseCol + 1) & r & "=0,""""," & colLetter(baseCol + 2) & r & "/" & colLetter(baseCol + 1) & r & ")"
     Next i
 
     ws.Range(ws.Cells(startRow + 2, baseCol + 4), ws.Cells(startRow + 1 + m, baseCol + 4)).NumberFormat = "0.0%"
@@ -1738,7 +1738,7 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
     Exit Sub
 
 FillPersonFail:
-    LogError "FillPersonTable", Err.Number, Err.Description, "Поле: " & fieldName
+    LogError "FillPersonTable (Поле: " & fieldName & ")", Err.Number, Err.Description
     Call CreatePersonTableHeaders(ws, startRow, baseCol, title, fieldName, 0, lastUsedRow)
     Exit Sub
 End Sub
@@ -1765,7 +1765,7 @@ Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Lo
     ws.Columns(colLetter(baseCol + 3)).ColumnWidth = 12
     ws.Columns(colLetter(baseCol + 4)).ColumnWidth = 14
     
-    ApplyBorders ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + rowCount, baseCol + 4))
+    ApplyBorders ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + IIf(rowCount = 0, 1, rowCount), baseCol + 4))
     
     Dim tblName As String
     Select Case fieldName
@@ -1777,7 +1777,8 @@ Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Lo
     End Select
     
     Dim tblRange As Range
-    Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + rowCount, baseCol + 4))
+    ' Исправление: если rowCount = 0, добавляем одну пустую строку для корректного создания умной таблицы
+    Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + IIf(rowCount = 0, 1, rowCount), baseCol + 4))
     
     Dim loOld As ListObject
     On Error Resume Next
@@ -1791,5 +1792,5 @@ Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Lo
     loNew.tableStyle = "TableStyleLight13"
     loNew.ShowAutoFilterDropDown = True
     
-    lastUsedRow = startRow + rowCount + 1
+    lastUsedRow = startRow + IIf(rowCount = 0, 1, rowCount) + 1
 End Sub
