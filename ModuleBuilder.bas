@@ -1600,6 +1600,9 @@ End Sub
 '===============================================================
 ' Таблица качества по человеку/полю
 '===============================================================
+'===============================================================
+' Таблица качества по человеку/полю
+'===============================================================
 Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByRef lastUsedRow As Long)
     On Error GoTo FillPersonFail
     
@@ -1765,7 +1768,9 @@ Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Lo
     ws.Columns(colLetter(baseCol + 3)).ColumnWidth = 12
     ws.Columns(colLetter(baseCol + 4)).ColumnWidth = 14
     
-    ApplyBorders ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + IIf(rowCount = 0, 1, rowCount), baseCol + 4))
+    Dim actualRowCount As Long
+    actualRowCount = IIf(rowCount = 0, 1, rowCount)
+    ApplyBorders ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + actualRowCount, baseCol + 4))
     
     Dim tblName As String
     Select Case fieldName
@@ -1777,8 +1782,7 @@ Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Lo
     End Select
     
     Dim tblRange As Range
-    ' Исправление: если rowCount = 0, добавляем одну пустую строку для корректного создания умной таблицы
-    Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + IIf(rowCount = 0, 1, rowCount), baseCol + 4))
+    Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + actualRowCount, baseCol + 4))
     
     Dim loOld As ListObject
     On Error Resume Next
@@ -1792,5 +1796,5 @@ Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Lo
     loNew.tableStyle = "TableStyleLight13"
     loNew.ShowAutoFilterDropDown = True
     
-    lastUsedRow = startRow + IIf(rowCount = 0, 1, rowCount) + 1
+    lastUsedRow = startRow + actualRowCount + 1
 End Sub
