@@ -875,23 +875,51 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
 
     For c = 1 To tCount
         cL = colLetter(1 + c)
-        ws.Cells(5, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4)"
-        ws.Cells(6, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Число ошибок],0)"
-        ws.Cells(7, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(8, 1 + c).formula = "=IF(" & cL & "5=0,""""," & cL & "6/" & cL & "5)"
-        ws.Cells(9, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Проект закрыт],TRUE)"
-        ws.Cells(10, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(11, 1 + c).formula = "=IF(" & cL & "9=0,"""",(" & cL & "9-" & cL & "10)/" & cL & "9)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(5, 1 + c).Address & ": COUNTIFS"
+        LogStep gStep
+        ws.Cells(5, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(6, 1 + c).Address & ": COUNTIFS"
+        LogStep gStep
+        ws.Cells(6, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Число ошибок],0)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(7, 1 + c).Address & ": COUNTIFS"
+        LogStep gStep
+        ws.Cells(7, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(8, 1 + c).Address & ": IF"
+        LogStep gStep
+        ws.Cells(8, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & "5=0,""""," & cL & "6/" & cL & "5)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(9, 1 + c).Address & ": COUNTIFS"
+        LogStep gStep
+        ws.Cells(9, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Проект закрыт],ИСТИНА)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(10, 1 + c).Address & ": COUNTIFS"
+        LogStep gStep
+        ws.Cells(10, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(11, 1 + c).Address & ": IF"
+        LogStep gStep
+        ws.Cells(11, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & "9=0,"""",(" & cL & "9-" & cL & "10)/" & cL & "9)"
     Next c
 
     cL = colLetter(totalCol)
-    ws.Cells(5, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"")"
-    ws.Cells(6, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],0)"
-    ws.Cells(7, totalCol).formula = "=SUM(" & colLetter(2) & "7:" & colLetter(1 + tCount) & "7)"
-    ws.Cells(8, totalCol).formula = "=IF(" & cL & "5=0,""""," & cL & "6/" & cL & "5)"
-    ws.Cells(9, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проект закрыт],TRUE)"
-    ws.Cells(10, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-    ws.Cells(11, totalCol).formula = "=IF(" & cL & "9=0,"""",(" & cL & "9-" & cL & "10)/" & cL & "9)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(5, totalCol).Address & ": COUNTIFS"
+    LogStep gStep
+    ws.Cells(5, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(6, totalCol).Address & ": COUNTIFS"
+    LogStep gStep
+    ws.Cells(6, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],0)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(7, totalCol).Address & ": SUM"
+    LogStep gStep
+    ws.Cells(7, totalCol).formulaLocal = "=СУММ(" & colLetter(2) & "7:" & colLetter(1 + tCount) & "7)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(8, totalCol).Address & ": IF"
+    LogStep gStep
+    ws.Cells(8, totalCol).formulaLocal = "=ЕСЛИ(" & cL & "5=0,""""," & cL & "6/" & cL & "5)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(9, totalCol).Address & ": COUNTIFS"
+    LogStep gStep
+    ws.Cells(9, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проект закрыт],ИСТИНА)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(10, totalCol).Address & ": COUNTIFS"
+    LogStep gStep
+    ws.Cells(10, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(11, totalCol).Address & ": IF"
+    LogStep gStep
+    ws.Cells(11, totalCol).formulaLocal = "=ЕСЛИ(" & cL & "9=0,"""",(" & cL & "9-" & cL & "10)/" & cL & "9)"
 
     ws.Range(ws.Cells(8, 2), ws.Cells(8, totalCol)).NumberFormat = "0.0%"
     ws.Range(ws.Cells(11, 2), ws.Cells(11, totalCol)).NumberFormat = "0.0%"

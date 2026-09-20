@@ -80,13 +80,15 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     LogStep "Таблица тблСправочникПродуктов создана на листе СправочникПродуктов"
     CreateErrorsSheet wsErrors
     CreateSourceSheet wsSource
-    CreateStatisticsSheet wb, wsStat
-    LogStep "Таблица тблСтатистика создана на листе Статистика"
     
-    ' === ИЗМЕНЕНИЕ: Теперь создаём тблПроекты после всех справочников ===
+    ' === ИЗМЕНЕНИЕ: Сначала создаём тблПроекты, т.к. тблСтатистика ссылается на неё ===
     LogStep "Создание таблицы тблПроекты на листе Проекты"
     CreateProjectsSheet wsProjects, wsLegend
     LogStep "Таблица тблПроекты создана"
+    
+    ' Теперь создаём тблСтатистика, которая содержит формулы с ссылками на тблПроекты
+    CreateStatisticsSheet wb, wsStat
+    LogStep "Таблица тблСтатистика создана на листе Статистика"
     
     ' Применяем стили ко всем таблицам
     Dim wsAny As Worksheet, loAny As ListObject

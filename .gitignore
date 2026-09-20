@@ -1,1 +1,1 @@
-Nothing should be ignored since the changes only include source code files (.bas files) which are the main project files.
+Nothing should be ignored since only source code files (.bas files) are being modified and no build artifacts, dependencies, or temporary files are present in the changes.
