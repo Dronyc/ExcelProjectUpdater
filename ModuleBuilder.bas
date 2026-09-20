@@ -120,8 +120,8 @@ Public Sub SetAllProjectFormulas(ByVal lo As ListObject)
     SetColumnFormula lo, "Недопустимое Состояние", "=IF(ISBLANK([@[Дата создания]]),FALSE,IF(LEN(TRIM([@[Состояние]]))=0,FALSE,ISNA(MATCH(TRIM([@[Состояние]]),ДопустимыеСостояния,0))))"
     SetColumnFormula lo, "Проверка Куратор", "=IF(ISBLANK([@[Дата создания]]),FALSE,OR(LEN(TRIM([@[Куратор]]))=0,LEN(TRIM([@[Куратор]]))=1,AND(LEN(TRIM([@[Куратор]]))>1,EXACT(TRIM([@[Куратор]]),REPT(LEFT(TRIM([@[Куратор]]),1),LEN(TRIM([@[Куратор]])))))))"
     SetColumnFormula lo, "Проверка Менеджер ОП", "=IF(ISBLANK([@[Дата создания]]),FALSE,OR(LEN(TRIM([@[Менеджер ОП]]))=0,LEN(TRIM([@[Менеджер ОП]]))=1,AND(LEN(TRIM([@[Менеджер ОП]]))>1,EXACT(TRIM([@[Менеджер ОП]]),REPT(LEFT(TRIM([@[Менеджер ОП]]),1),LEN(TRIM([@[Менеджер ОП]])))))))"
-    SetColumnFormula lo, "Список некорректных полей", "=IF(ISBLANK([@[Дата создания]]),"""",TEXTJOIN("", "",TRUE,IF([@[Проверка Контрагент]],""Контрагент"",""""),IF([@[Проверка Дата создания]],""Дата создания"",""""),IF([@[Проверка Код]],""Код в базе 1С:УПП"",""""),IF([@[Проверка Код проекта в 1С:УПП]],""Код проекта в 1С:УПП"",""""),IF([@[Проверка Наименование проекта]],""Наименование проекта"",""""),IF(OR([@[Проверка Состояние]],[@[Недопустимое Состояние]]),""Состояние"",""""),IF([@[Проверка Куратор]],""Куратор"",""""),IF([@[Проверка Менеджер ОП]],""Менеджер ОП"","""")))"
-    SetColumnFormula lo, "Ошибка обязательных полей", "=IF([@[Список некорректных полей]]="""",FALSE,TRUE)"
+    SetColumnFormula lo, "Список некорректных полей", "=IF(ISBLANK([@[Дата создания]]),"""",TEXTJOIN("", "",ИСТИНА,IF([@[Проверка Контрагент]],""Контрагент"",""""),IF([@[Проверка Дата создания]],""Дата создания"",""""),IF([@[Проверка Код]],""Код в базе 1С:УПП"",""""),IF([@[Проверка Код проекта в 1С:УПП]],""Код проекта в 1С:УПП"",""""),IF([@[Проверка Наименование проекта]],""Наименование проекта"",""""),IF(OR([@[Проверка Состояние]],[@[Недопустимое Состояние]]),""Состояние"",""""),IF([@[Проверка Куратор]],""Куратор"",""""),IF([@[Проверка Менеджер ОП]],""Менеджер ОП"","""")))"
+    SetColumnFormula lo, "Ошибка обязательных полей", "=IF([@[Список некорректных полей]]="""",FALSE,ИСТИНА)"
     SetColumnFormula lo, "Число ошибок", "=([@[Проверка Контрагент]]+[@[Проверка Дата создания]]+[@[Проверка Код]]+[@[Проверка Код проекта в 1С:УПП]]+[@[Проверка Наименование проекта]]+[@[Проверка Состояние]]+[@[Недопустимое Состояние]]+[@[Проверка Куратор]]+[@[Проверка Менеджер ОП]])"
     SetColumnFormula lo, "Проект закрыт", "=IF([@[Дата создания]]="""","""",OR([@[Состояние]]=""Завершен"",[@[Состояние]]=""Прекращен с отрицательным результатом"",[@[Состояние]]=""Не состоялся""))"
     SetColumnFormula lo, "Группа ПГС", "=IF(ISBLANK([@[Продукт]]),""""," & "IF(ISNUMBER(SEARCH(""ПГС"",IFERROR(VLOOKUP(TRIM([@[Продукт]]),тблСправочникПродуктов,2,FALSE),""""))),""да""," & "IF(ISNUMBER(SEARCH(""ТИМ"",IFERROR(VLOOKUP(TRIM([@[Продукт]]),тблСправочникПродуктов,2,FALSE),""""))),""да"","""")))"
@@ -154,7 +154,7 @@ Public Sub SetColumnFormula(ByVal lo As ListObject, ByVal columnName As String, 
     If Not lc.DataBodyRange Is Nothing Then
         ' Оптимизация: записываем формулу только в первую ячейку столбца
         ' Excel автоматически расширяет её на весь столбец (Calculated Column)
-        lc.DataBodyRange.Cells(1, 1).formula = formulaText
+        lc.DataBodyRange.Cells(1, 1).formulaLocal = formulaText
     End If
     On Error GoTo 0
 End Sub
@@ -877,23 +877,37 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
         cL = colLetter(1 + c)
         gStep = "Запись формулы в ячейку " & ws.Cells(5, 1 + c).Address & ": COUNTIFS"
         LogStep gStep
+        gStep = "Запись формулы в ячейку " & ws.Cells(5, 1 + c).Address
+        LogStep gStep
         ws.Cells(5, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4)"
         gStep = "Запись формулы в ячейку " & ws.Cells(6, 1 + c).Address & ": COUNTIFS"
+        LogStep gStep
+        gStep = "Запись формулы в ячейку " & ws.Cells(6, 1 + c).Address
         LogStep gStep
         ws.Cells(6, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Число ошибок],0)"
         gStep = "Запись формулы в ячейку " & ws.Cells(7, 1 + c).Address & ": COUNTIFS"
         LogStep gStep
+        gStep = "Запись формулы в ячейку " & ws.Cells(7, 1 + c).Address
+        LogStep gStep
         ws.Cells(7, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Число ошибок],"">0"")"
         gStep = "Запись формулы в ячейку " & ws.Cells(8, 1 + c).Address & ": IF"
+        LogStep gStep
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(8, 1 + c).Address
         LogStep gStep
         ws.Cells(8, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & "5=0,""""," & cL & "6/" & cL & "5)"
         gStep = "Запись формулы в ячейку " & ws.Cells(9, 1 + c).Address & ": COUNTIFS"
         LogStep gStep
+        gStep = "Запись формулы в ячейку " & ws.Cells(9, 1 + c).Address
+        LogStep gStep
         ws.Cells(9, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Проект закрыт],ИСТИНА)"
         gStep = "Запись формулы в ячейку " & ws.Cells(10, 1 + c).Address & ": COUNTIFS"
         LogStep gStep
+        gStep = "Запись формулы в ячейку " & ws.Cells(10, 1 + c).Address
+        LogStep gStep
         ws.Cells(10, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$4,тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
         gStep = "Запись формулы в ячейку " & ws.Cells(11, 1 + c).Address & ": IF"
+        LogStep gStep
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(11, 1 + c).Address
         LogStep gStep
         ws.Cells(11, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & "9=0,"""",(" & cL & "9-" & cL & "10)/" & cL & "9)"
     Next c
@@ -901,23 +915,37 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     cL = colLetter(totalCol)
     gStep = "Запись формулы в ячейку " & ws.Cells(5, totalCol).Address & ": COUNTIFS"
     LogStep gStep
+    gStep = "Запись формулы в ячейку " & ws.Cells(5, totalCol).Address
+    LogStep gStep
     ws.Cells(5, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"")"
     gStep = "Запись формулы в ячейку " & ws.Cells(6, totalCol).Address & ": COUNTIFS"
+    LogStep gStep
+    gStep = "Запись формулы в ячейку " & ws.Cells(6, totalCol).Address
     LogStep gStep
     ws.Cells(6, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],0)"
     gStep = "Запись формулы в ячейку " & ws.Cells(7, totalCol).Address & ": SUM"
     LogStep gStep
+    gStep = "Запись формулы СУММ в ячейку " & ws.Cells(7, totalCol).Address
+    LogStep gStep
     ws.Cells(7, totalCol).formulaLocal = "=СУММ(" & colLetter(2) & "7:" & colLetter(1 + tCount) & "7)"
     gStep = "Запись формулы в ячейку " & ws.Cells(8, totalCol).Address & ": IF"
+    LogStep gStep
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(8, totalCol).Address
     LogStep gStep
     ws.Cells(8, totalCol).formulaLocal = "=ЕСЛИ(" & cL & "5=0,""""," & cL & "6/" & cL & "5)"
     gStep = "Запись формулы в ячейку " & ws.Cells(9, totalCol).Address & ": COUNTIFS"
     LogStep gStep
+    gStep = "Запись формулы в ячейку " & ws.Cells(9, totalCol).Address
+    LogStep gStep
     ws.Cells(9, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проект закрыт],ИСТИНА)"
     gStep = "Запись формулы в ячейку " & ws.Cells(10, totalCol).Address & ": COUNTIFS"
     LogStep gStep
+    gStep = "Запись формулы в ячейку " & ws.Cells(10, totalCol).Address
+    LogStep gStep
     ws.Cells(10, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
     gStep = "Запись формулы в ячейку " & ws.Cells(11, totalCol).Address & ": IF"
+    LogStep gStep
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(11, totalCol).Address
     LogStep gStep
     ws.Cells(11, totalCol).formulaLocal = "=ЕСЛИ(" & cL & "9=0,"""",(" & cL & "9-" & cL & "10)/" & cL & "9)"
 
@@ -960,23 +988,51 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
 
     For c = 1 To tCount
         cL = colLetter(1 + c)
-        ws.Cells(rowT2 + 2, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-        ws.Cells(rowT2 + 3, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
-        ws.Cells(rowT2 + 4, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT2 + 5, 1 + c).formula = "=IF(" & cL & (rowT2 + 2) & "=0,""""," & cL & (rowT2 + 3) & "/" & cL & (rowT2 + 2) & ")"
-        ws.Cells(rowT2 + 6, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE)"
-        ws.Cells(rowT2 + 7, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT2 + 8, 1 + c).formula = "=IF(" & cL & (rowT2 + 6) & "=0,"""",(" & cL & (rowT2 + 6) & "-" & cL & (rowT2 + 7) & ")/" & cL & (rowT2 + 6) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 2, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 2, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 3, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 3, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 4, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 4, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT2 + 5, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 5, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT2 + 2) & "=0,""""," & cL & (rowT2 + 3) & "/" & cL & (rowT2 + 2) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 6, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 6, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 7, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 7, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT2 + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT2 + 8, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT2 + 8, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT2 + 6) & "=0,"""",(" & cL & (rowT2 + 6) & "-" & cL & (rowT2 + 7) & ")/" & cL & (rowT2 + 6) & ")"
     Next c
 
     cL = colLetter(totalCol)
-    ws.Cells(rowT2 + 2, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Cells(rowT2 + 3, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
-    ws.Cells(rowT2 + 4, totalCol).formula = "=SUM(" & colLetter(2) & (rowT2 + 4) & ":" & colLetter(1 + tCount) & (rowT2 + 4) & ")"
-    ws.Cells(rowT2 + 5, totalCol).formula = "=IF(" & cL & (rowT2 + 2) & "=0,""""," & cL & (rowT2 + 3) & "/" & cL & (rowT2 + 2) & ")"
-    ws.Cells(rowT2 + 6, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE)"
-    ws.Cells(rowT2 + 7, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-    ws.Cells(rowT2 + 8, totalCol).formula = "=IF(" & cL & (rowT2 + 6) & "=0,"""",(" & cL & (rowT2 + 6) & "-" & cL & (rowT2 + 7) & ")/" & cL & (rowT2 + 6) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 2, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 2, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 3, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 3, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
+    gStep = "Запись формулы СУММ в ячейку " & ws.Cells(rowT2 + 4, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 4, totalCol).formulaLocal = "=СУММ(" & colLetter(2) & (rowT2 + 4) & ":" & colLetter(1 + tCount) & (rowT2 + 4) & ")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT2 + 5, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 5, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT2 + 2) & "=0,""""," & cL & (rowT2 + 3) & "/" & cL & (rowT2 + 2) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 6, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 6, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT2 + 7, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 7, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT2 + 8, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT2 + 8, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT2 + 6) & "=0,"""",(" & cL & (rowT2 + 6) & "-" & cL & (rowT2 + 7) & ")/" & cL & (rowT2 + 6) & ")"
 
     ws.Range(ws.Cells(rowT2 + 5, 2), ws.Cells(rowT2 + 5, totalCol)).NumberFormat = "0.0%"
     ws.Range(ws.Cells(rowT2 + 8, 2), ws.Cells(rowT2 + 8, totalCol)).NumberFormat = "0.0%"
@@ -1016,23 +1072,51 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
 
     For c = 1 To tCount
         cL = colLetter(1 + c)
-        ws.Cells(rowT3 + 2, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-        ws.Cells(rowT3 + 3, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Число ошибок],0)"
-        ws.Cells(rowT3 + 4, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT3 + 5, 1 + c).formula = "=IF(" & cL & (rowT3 + 2) & "=0,""""," & cL & (rowT3 + 3) & "/" & cL & (rowT3 + 2) & ")"
-        ws.Cells(rowT3 + 6, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],TRUE)"
-        ws.Cells(rowT3 + 7, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT3 + 8, 1 + c).formula = "=IF(" & cL & (rowT3 + 6) & "=0,"""",(" & cL & (rowT3 + 6) & "-" & cL & (rowT3 + 7) & ")/" & cL & (rowT3 + 6) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 2, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 2, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 3, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 3, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Число ошибок],0)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 4, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 4, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT3 + 5, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 5, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT3 + 2) & "=0,""""," & cL & (rowT3 + 3) & "/" & cL & (rowT3 + 2) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 6, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 6, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],ИСТИНА)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 7, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 7, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT3 + 1) & ",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT3 + 8, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT3 + 8, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT3 + 6) & "=0,"""",(" & cL & (rowT3 + 6) & "-" & cL & (rowT3 + 7) & ")/" & cL & (rowT3 + 6) & ")"
     Next c
 
     cL = colLetter(totalCol)
-    ws.Cells(rowT3 + 2, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Cells(rowT3 + 3, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Число ошибок],0)"
-    ws.Cells(rowT3 + 4, totalCol).formula = "=SUM(" & colLetter(2) & (rowT3 + 4) & ":" & colLetter(1 + tCount) & (rowT3 + 4) & ")"
-    ws.Cells(rowT3 + 5, totalCol).formula = "=IF(" & cL & (rowT3 + 2) & "=0,""""," & cL & (rowT3 + 3) & "/" & cL & (rowT3 + 2) & ")"
-    ws.Cells(rowT3 + 6, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],TRUE)"
-    ws.Cells(rowT3 + 7, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-    ws.Cells(rowT3 + 8, totalCol).formula = "=IF(" & cL & (rowT3 + 6) & "=0,"""",(" & cL & (rowT3 + 6) & "-" & cL & (rowT3 + 7) & ")/" & cL & (rowT3 + 6) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 2, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 2, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 3, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 3, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Число ошибок],0)"
+    gStep = "Запись формулы СУММ в ячейку " & ws.Cells(rowT3 + 4, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 4, totalCol).formulaLocal = "=СУММ(" & colLetter(2) & (rowT3 + 4) & ":" & colLetter(1 + tCount) & (rowT3 + 4) & ")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT3 + 5, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 5, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT3 + 2) & "=0,""""," & cL & (rowT3 + 3) & "/" & cL & (rowT3 + 2) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 6, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 6, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],ИСТИНА)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT3 + 7, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 7, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT3 + 8, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT3 + 8, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT3 + 6) & "=0,"""",(" & cL & (rowT3 + 6) & "-" & cL & (rowT3 + 7) & ")/" & cL & (rowT3 + 6) & ")"
 
     ws.Range(ws.Cells(rowT3 + 5, 2), ws.Cells(rowT3 + 5, totalCol)).NumberFormat = "0.0%"
     ws.Range(ws.Cells(rowT3 + 8, 2), ws.Cells(rowT3 + 8, totalCol)).NumberFormat = "0.0%"
@@ -1072,23 +1156,51 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
 
     For c = 1 To tCount
         cL = colLetter(1 + c)
-        ws.Cells(rowT4a + 2, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-        ws.Cells(rowT4a + 3, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Число ошибок],0)"
-        ws.Cells(rowT4a + 4, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT4a + 5, 1 + c).formula = "=IF(" & cL & (rowT4a + 2) & "=0,""""," & cL & (rowT4a + 3) & "/" & cL & (rowT4a + 2) & ")"
-        ws.Cells(rowT4a + 6, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],TRUE)"
-        ws.Cells(rowT4a + 7, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT4a + 8, 1 + c).formula = "=IF(" & cL & (rowT4a + 6) & "=0,"""",(" & cL & (rowT4a + 6) & "-" & cL & (rowT4a + 7) & ")/" & cL & (rowT4a + 6) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 2, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 2, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 3, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 3, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Число ошибок],0)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 4, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 4, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4a + 5, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 5, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT4a + 2) & "=0,""""," & cL & (rowT4a + 3) & "/" & cL & (rowT4a + 2) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 6, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 6, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],ИСТИНА)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 7, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 7, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4a + 1) & ",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4a + 8, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4a + 8, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT4a + 6) & "=0,"""",(" & cL & (rowT4a + 6) & "-" & cL & (rowT4a + 7) & ")/" & cL & (rowT4a + 6) & ")"
     Next c
 
     cL = colLetter(totalCol)
-    ws.Cells(rowT4a + 2, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Cells(rowT4a + 3, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Число ошибок],0)"
-    ws.Cells(rowT4a + 4, totalCol).formula = "=SUM(" & colLetter(2) & (rowT4a + 4) & ":" & colLetter(1 + tCount) & (rowT4a + 4) & ")"
-    ws.Cells(rowT4a + 5, totalCol).formula = "=IF(" & cL & (rowT4a + 2) & "=0,""""," & cL & (rowT4a + 3) & "/" & cL & (rowT4a + 2) & ")"
-    ws.Cells(rowT4a + 6, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],TRUE)"
-    ws.Cells(rowT4a + 7, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-    ws.Cells(rowT4a + 8, totalCol).formula = "=IF(" & cL & (rowT4a + 6) & "=0,"""",(" & cL & (rowT4a + 6) & "-" & cL & (rowT4a + 7) & ")/" & cL & (rowT4a + 6) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 2, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 2, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 3, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 3, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Число ошибок],0)"
+    gStep = "Запись формулы СУММ в ячейку " & ws.Cells(rowT4a + 4, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 4, totalCol).formulaLocal = "=СУММ(" & colLetter(2) & (rowT4a + 4) & ":" & colLetter(1 + tCount) & (rowT4a + 4) & ")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4a + 5, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 5, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT4a + 2) & "=0,""""," & cL & (rowT4a + 3) & "/" & cL & (rowT4a + 2) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 6, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 6, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],ИСТИНА)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4a + 7, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 7, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4a + 8, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4a + 8, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT4a + 6) & "=0,"""",(" & cL & (rowT4a + 6) & "-" & cL & (rowT4a + 7) & ")/" & cL & (rowT4a + 6) & ")"
 
     ws.Range(ws.Cells(rowT4a + 5, 2), ws.Cells(rowT4a + 5, totalCol)).NumberFormat = "0.0%"
     ws.Range(ws.Cells(rowT4a + 8, 2), ws.Cells(rowT4a + 8, totalCol)).NumberFormat = "0.0%"
@@ -1128,23 +1240,51 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
 
     For c = 1 To tCount
         cL = colLetter(1 + c)
-        ws.Cells(rowT4b + 2, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-        ws.Cells(rowT4b + 3, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
-        ws.Cells(rowT4b + 4, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT4b + 5, 1 + c).formula = "=IF(" & cL & (rowT4b + 2) & "=0,""""," & cL & (rowT4b + 3) & "/" & cL & (rowT4b + 2) & ")"
-        ws.Cells(rowT4b + 6, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE)"
-        ws.Cells(rowT4b + 7, 1 + c).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(rowT4b + 8, 1 + c).formula = "=IF(" & cL & (rowT4b + 6) & "=0,"""",(" & cL & (rowT4b + 6) & "-" & cL & (rowT4b + 7) & ")/" & cL & (rowT4b + 6) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 2, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 2, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 3, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 3, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 4, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 4, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4b + 5, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 5, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT4b + 2) & "=0,""""," & cL & (rowT4b + 3) & "/" & cL & (rowT4b + 2) & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 6, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 6, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 7, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 7, 1 + c).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Тип проекта]," & cL & "$" & (rowT4b + 1) & ",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4b + 8, 1 + c).Address
+        LogStep gStep
+        ws.Cells(rowT4b + 8, 1 + c).formulaLocal = "=ЕСЛИ(" & cL & (rowT4b + 6) & "=0,"""",(" & cL & (rowT4b + 6) & "-" & cL & (rowT4b + 7) & ")/" & cL & (rowT4b + 6) & ")"
     Next c
 
     cL = colLetter(totalCol)
-    ws.Cells(rowT4b + 2, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Cells(rowT4b + 3, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
-    ws.Cells(rowT4b + 4, totalCol).formula = "=SUM(" & colLetter(2) & (rowT4b + 4) & ":" & colLetter(1 + tCount) & (rowT4b + 4) & ")"
-    ws.Cells(rowT4b + 5, totalCol).formula = "=IF(" & cL & (rowT4b + 2) & "=0,""""," & cL & (rowT4b + 3) & "/" & cL & (rowT4b + 2) & ")"
-    ws.Cells(rowT4b + 6, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE)"
-    ws.Cells(rowT4b + 7, totalCol).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],TRUE,тблПроекты[Число ошибок],"">0"")"
-    ws.Cells(rowT4b + 8, totalCol).formula = "=IF(" & cL & (rowT4b + 6) & "=0,"""",(" & cL & (rowT4b + 6) & "-" & cL & (rowT4b + 7) & ")/" & cL & (rowT4b + 6) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 2, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 2, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 3, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 3, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Число ошибок],0)"
+    gStep = "Запись формулы СУММ в ячейку " & ws.Cells(rowT4b + 4, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 4, totalCol).formulaLocal = "=СУММ(" & colLetter(2) & (rowT4b + 4) & ":" & colLetter(1 + tCount) & (rowT4b + 4) & ")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4b + 5, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 5, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT4b + 2) & "=0,""""," & cL & (rowT4b + 3) & "/" & cL & (rowT4b + 2) & ")"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 6, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 6, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА)"
+    gStep = "Запись формулы в ячейку " & ws.Cells(rowT4b + 7, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 7, totalCol).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""",тблПроекты[Проект закрыт],ИСТИНА,тблПроекты[Число ошибок],"">0"")"
+    gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(rowT4b + 8, totalCol).Address
+    LogStep gStep
+    ws.Cells(rowT4b + 8, totalCol).formulaLocal = "=ЕСЛИ(" & cL & (rowT4b + 6) & "=0,"""",(" & cL & (rowT4b + 6) & "-" & cL & (rowT4b + 7) & ")/" & cL & (rowT4b + 6) & ")"
 
     ws.Range(ws.Cells(rowT4b + 5, 2), ws.Cells(rowT4b + 5, totalCol)).NumberFormat = "0.0%"
     ws.Range(ws.Cells(rowT4b + 8, 2), ws.Cells(rowT4b + 8, totalCol)).NumberFormat = "0.0%"
@@ -1223,13 +1363,13 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT5 + 1)).value = "Число ошибок"
     ws.Range("B" & (rowT5 + 1)).value = "Количество"
     ws.Range("A" & (rowT5 + 2)).value = "0 ошибок"
-    ws.Range("B" & (rowT5 + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],0)"
+    ws.Range("B" & (rowT5 + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],0)"
     ws.Range("A" & (rowT5 + 3)).value = "1 ошибка"
-    ws.Range("B" & (rowT5 + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],1)"
+    ws.Range("B" & (rowT5 + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],1)"
     ws.Range("A" & (rowT5 + 4)).value = "2 ошибки"
-    ws.Range("B" & (rowT5 + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],2)"
+    ws.Range("B" & (rowT5 + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],2)"
     ws.Range("A" & (rowT5 + 5)).value = "3 и более"
-    ws.Range("B" & (rowT5 + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],"">2"")"
+    ws.Range("B" & (rowT5 + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Число ошибок],"">2"")"
     ApplyBorders ws.Range(ws.Cells(rowT5 + 1, 1), ws.Cells(rowT5 + 5, 2))
 
     '================ 3. Поля: корректность и заполненность (ОБЩАЯ) =================
@@ -1255,20 +1395,26 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
 
     Dim r As Long
     For r = rowT6 + 2 To rowT6 + 11
-        ws.Cells(r, 3).formula = "=$G$5"
-        ws.Cells(r, 4).formula = "=C" & r & "-E" & r
-        ws.Cells(r, 6).formula = "=IF(C" & r & "=0,"""",D" & r & "/C" & r & ")"
+        gStep = "Запись формулы FORMULA в ячейку " & ws.Cells(r, 3).Address
+        LogStep gStep
+ws.Cells(r, 3).formulaLocal = "=$G$5"
+        gStep = "Запись формулы FORMULA в ячейку " & ws.Cells(r, 4).Address
+        LogStep gStep
+ws.Cells(r, 4).formulaLocal = "=C" & r & "-E" & r
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(r, 6).Address
+        LogStep gStep
+        ws.Cells(r, 6).formulaLocal = "=ЕСЛИ(C" & r & "=0,"""",D" & r & "/C" & r & ")"
     Next r
-    ws.Range("E" & (rowT6 + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],TRUE)"
-    ws.Range("E" & (rowT6 + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],TRUE)"
-    ws.Range("E" & (rowT6 + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],TRUE)"
-    ws.Range("E" & (rowT6 + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""")"
-    ws.Range("E" & (rowT6 + 6)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],TRUE)"
-    ws.Range("E" & (rowT6 + 7)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],TRUE)+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE)"
-    ws.Range("E" & (rowT6 + 8)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],TRUE)"
-    ws.Range("E" & (rowT6 + 9)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],TRUE)"
-    ws.Range("E" & (rowT6 + 10)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""")"
-    ws.Range("E" & (rowT6 + 11)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""")"
+    ws.Range("E" & (rowT6 + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""")"
+    ws.Range("E" & (rowT6 + 6)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 7)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],ИСТИНА)+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 8)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 9)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],ИСТИНА)"
+    ws.Range("E" & (rowT6 + 10)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""")"
+    ws.Range("E" & (rowT6 + 11)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""")"
     ws.Range("F" & (rowT6 + 2) & ":F" & (rowT6 + 11)).NumberFormat = "0.0%"
     ApplyBorders ws.Range(ws.Cells(rowT6 + 1, 1), ws.Cells(rowT6 + 11, 6))
 
@@ -1293,20 +1439,26 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT6b + 10)).value = "Продукт": ws.Range("B" & (rowT6b + 10)).value = "рекоменд."
     ws.Range("A" & (rowT6b + 11)).value = "Руководитель проекта": ws.Range("B" & (rowT6b + 11)).value = "рекоменд."
     For r = rowT6b + 2 To rowT6b + 11
-        ws.Cells(r, 3).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-        ws.Cells(r, 4).formula = "=C" & r & "-E" & r
-        ws.Cells(r, 6).formula = "=IF(C" & r & "=0,"""",D" & r & "/C" & r & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, 3).Address
+        LogStep gStep
+        ws.Cells(r, 3).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+        gStep = "Запись формулы FORMULA в ячейку " & ws.Cells(r, 4).Address
+        LogStep gStep
+ws.Cells(r, 4).formulaLocal = "=C" & r & "-E" & r
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(r, 6).Address
+        LogStep gStep
+        ws.Cells(r, 6).formulaLocal = "=ЕСЛИ(C" & r & "=0,"""",D" & r & "/C" & r & ")"
     Next r
-    ws.Range("E" & (rowT6b + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 6)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 7)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 8)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 9)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 10)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6b + 11)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 6)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 7)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 8)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 9)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 10)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6b + 11)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],"""")"
     ws.Range("F" & (rowT6b + 2) & ":F" & (rowT6b + 11)).NumberFormat = "0.0%"
     ApplyBorders ws.Range(ws.Cells(rowT6b + 1, 1), ws.Cells(rowT6b + 11, 6))
 
@@ -1331,20 +1483,26 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT6c + 10)).value = "Продукт": ws.Range("B" & (rowT6c + 10)).value = "рекоменд."
     ws.Range("A" & (rowT6c + 11)).value = "Руководитель проекта": ws.Range("B" & (rowT6c + 11)).value = "рекоменд."
     For r = rowT6c + 2 To rowT6c + 11
-        ws.Cells(r, 3).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-        ws.Cells(r, 4).formula = "=C" & r & "-E" & r
-        ws.Cells(r, 6).formula = "=IF(C" & r & "=0,"""",D" & r & "/C" & r & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, 3).Address
+        LogStep gStep
+        ws.Cells(r, 3).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+        gStep = "Запись формулы FORMULA в ячейку " & ws.Cells(r, 4).Address
+        LogStep gStep
+ws.Cells(r, 4).formulaLocal = "=C" & r & "-E" & r
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(r, 6).Address
+        LogStep gStep
+        ws.Cells(r, 6).formulaLocal = "=ЕСЛИ(C" & r & "=0,"""",D" & r & "/C" & r & ")"
     Next r
-    ws.Range("E" & (rowT6c + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 6)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 7)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 8)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 9)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],TRUE,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 10)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
-    ws.Range("E" & (rowT6c + 11)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 6)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 7)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 8)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 9)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],ИСТИНА,тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 10)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
+    ws.Range("E" & (rowT6c + 11)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа PLM],""да"",тблПроекты[Группа ПГС],"""")"
     ws.Range("F" & (rowT6c + 2) & ":F" & (rowT6c + 11)).NumberFormat = "0.0%"
     ApplyBorders ws.Range(ws.Cells(rowT6c + 1, 1), ws.Cells(rowT6c + 11, 6))
 
@@ -1369,20 +1527,26 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT6d + 10)).value = "Продукт": ws.Range("B" & (rowT6d + 10)).value = "рекоменд."
     ws.Range("A" & (rowT6d + 11)).value = "Руководитель проекта": ws.Range("B" & (rowT6d + 11)).value = "рекоменд."
     For r = rowT6d + 2 To rowT6d + 11
-        ws.Cells(r, 3).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-        ws.Cells(r, 4).formula = "=C" & r & "-E" & r
-        ws.Cells(r, 6).formula = "=IF(C" & r & "=0,"""",D" & r & "/C" & r & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, 3).Address
+        LogStep gStep
+        ws.Cells(r, 3).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+        gStep = "Запись формулы FORMULA в ячейку " & ws.Cells(r, 4).Address
+        LogStep gStep
+ws.Cells(r, 4).formulaLocal = "=C" & r & "-E" & r
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(r, 6).Address
+        LogStep gStep
+        ws.Cells(r, 6).formulaLocal = "=ЕСЛИ(C" & r & "=0,"""",D" & r & "/C" & r & ")"
     Next r
-    ws.Range("E" & (rowT6d + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 6)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 7)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 8)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 9)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],TRUE,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 10)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
-    ws.Range("E" & (rowT6d + 11)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 6)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 7)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 8)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 9)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],ИСТИНА,тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 10)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
+    ws.Range("E" & (rowT6d + 11)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа ПГС],""да"",тблПроекты[Группа PLM],""да"")"
     ws.Range("F" & (rowT6d + 2) & ":F" & (rowT6d + 11)).NumberFormat = "0.0%"
     ApplyBorders ws.Range(ws.Cells(rowT6d + 1, 1), ws.Cells(rowT6d + 11, 6))
 
@@ -1407,20 +1571,26 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT6e + 10)).value = "Продукт": ws.Range("B" & (rowT6e + 10)).value = "рекоменд."
     ws.Range("A" & (rowT6e + 11)).value = "Руководитель проекта": ws.Range("B" & (rowT6e + 11)).value = "рекоменд."
     For r = rowT6e + 2 To rowT6e + 11
-        ws.Cells(r, 3).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-        ws.Cells(r, 4).formula = "=C" & r & "-E" & r
-        ws.Cells(r, 6).formula = "=IF(C" & r & "=0,"""",D" & r & "/C" & r & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, 3).Address
+        LogStep gStep
+        ws.Cells(r, 3).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+        gStep = "Запись формулы FORMULA в ячейку " & ws.Cells(r, 4).Address
+        LogStep gStep
+ws.Cells(r, 4).formulaLocal = "=C" & r & "-E" & r
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(r, 6).Address
+        LogStep gStep
+        ws.Cells(r, 6).formulaLocal = "=ЕСЛИ(C" & r & "=0,"""",D" & r & "/C" & r & ")"
     Next r
-    ws.Range("E" & (rowT6e + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 6)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 7)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 8)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 9)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],TRUE,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 10)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
-    ws.Range("E" & (rowT6e + 11)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Контрагент],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Дата создания],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 6)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Наименование проекта],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 7)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Состояние],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")+COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 8)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Куратор],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 9)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Менеджер ОП],ИСТИНА,тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 10)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Продукт],"""",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
+    ws.Range("E" & (rowT6e + 11)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Руководитель проекта],"""",тблПроекты[Группа ПГС],"""",тблПроекты[Группа PLM],"""")"
     ws.Range("F" & (rowT6e + 2) & ":F" & (rowT6e + 11)).NumberFormat = "0.0%"
     ApplyBorders ws.Range(ws.Cells(rowT6e + 1, 1), ws.Cells(rowT6e + 11, 6))
 
@@ -1431,13 +1601,13 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT7 + 1)).value = "Дефект"
     ws.Range("B" & (rowT7 + 1)).value = "Количество"
     ws.Range("A" & (rowT7 + 2)).value = "Код в УПП пуст или не начинается с ""Я-"""
-    ws.Range("B" & (rowT7 + 2)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],TRUE)"
+    ws.Range("B" & (rowT7 + 2)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Проверка Код],ИСТИНА)"
     ws.Range("A" & (rowT7 + 3)).value = "Код проекта в 1С:УПП не заполнен"
-    ws.Range("B" & (rowT7 + 3)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""")"
+    ws.Range("B" & (rowT7 + 3)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Код проекта в 1С:УПП],"""")"
     ws.Range("A" & (rowT7 + 4)).value = "Дубли кода в УПП"
-    ws.Range("B" & (rowT7 + 4)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Дубль кода],TRUE)"
+    ws.Range("B" & (rowT7 + 4)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Дубль кода],ИСТИНА)"
     ws.Range("A" & (rowT7 + 5)).value = "Состояние вне допустимого списка"
-    ws.Range("B" & (rowT7 + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE)"
+    ws.Range("B" & (rowT7 + 5)).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],ИСТИНА)"
     ApplyBorders ws.Range(ws.Cells(rowT7 + 1, 1), ws.Cells(rowT7 + 5, 2))
 
     '================ 5-8. Качество по людям =================
@@ -1722,10 +1892,18 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
     For i = 1 To m
         r = startRow + 1 + i
         ws.Cells(r, baseCol).value = vals(i)
-        ws.Cells(r, baseCol + 1).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Дата создания],""<>"")"
-        ws.Cells(r, baseCol + 2).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],0)"
-        ws.Cells(r, baseCol + 3).formula = "=COUNTIFS(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],"">0"")"
-        ws.Cells(r, baseCol + 4).formula = "=IF(" & colLetter(baseCol + 1) & r & "=0,""""," & colLetter(baseCol + 2) & r & "/" & colLetter(baseCol + 1) & r & ")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, baseCol + 1).Address
+        LogStep gStep
+        ws.Cells(r, baseCol + 1).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Дата создания],""<>"")"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, baseCol + 2).Address
+        LogStep gStep
+        ws.Cells(r, baseCol + 2).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],0)"
+        gStep = "Запись формулы в ячейку " & ws.Cells(r, baseCol + 3).Address
+        LogStep gStep
+        ws.Cells(r, baseCol + 3).formulaLocal = "=СЧЁТЕСЛИМН(тблПроекты[" & fieldName & "]," & cName & r & ",тблПроекты[Число ошибок],"">0"")"
+        gStep = "Запись формулы ЕСЛИ в ячейку " & ws.Cells(r, baseCol + 4).Address
+        LogStep gStep
+        ws.Cells(r, baseCol + 4).formulaLocal = "=ЕСЛИ(" & colLetter(baseCol + 1) & r & "=0,""""," & colLetter(baseCol + 2) & r & "/" & colLetter(baseCol + 1) & r & ")"
     Next i
 
     ws.Range(ws.Cells(startRow + 2, baseCol + 4), ws.Cells(startRow + 1 + m, baseCol + 4)).NumberFormat = "0.0%"

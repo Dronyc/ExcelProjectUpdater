@@ -1,1 +1,1 @@
-Nothing should be ignored since only source code files (.bas files) are being modified and no build artifacts, dependencies, or temporary files are present in the changes.
+Nothing needs to be added to .gitignore since only a single source file (ModuleBuilder.bas) was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
