@@ -814,12 +814,12 @@ End Sub
 ' СТАТИСТИКА (перенесена из Module1 без изменений)
 '===============================================================
 Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
-    LogStep "CreateStatisticsSheet: ПРОЦЕДУРА НАЧАЛА ВЫПОЛНЕНИЕ"
-    ' Код CreateStatistics из Module1 (без изменений)
-    ' Вставьте сюда полный код процедуры CreateStatistics из Module1
-    ' (он слишком большой, чтобы дублировать здесь — используйте существующий код)
     LogStep "CreateStatisticsSheet: начало"
-ws.Cells.Clear
+    
+    ' === ПОСТРОЕНИЕ ТАБЛИЦ 1-4: ДИНАМИКА И ДЕФЕКТЫ ===
+    LogStep "Построение таблиц 1-4: Динамика и дефекты"
+    
+    ws.Cells.Clear
     Do While ws.ListObjects.count > 0
         ws.ListObjects(1).Delete
     Loop
@@ -1413,6 +1413,9 @@ ws.Cells.Clear
     ApplyBorders ws.Range(ws.Cells(rowT7 + 1, 1), ws.Cells(rowT7 + 5, 2))
 
     '================ 5-8. Качество по людям =================
+    ' === ПОСТРОЕНИЕ ТАБЛИЦ 5-8: КАЧЕСТВО ПО ЛЮДЯМ ===
+    LogStep "Построение таблиц 5-8: Качество по людям"
+    
     Dim nextRow As Long
     nextRow = rowT7 + 7
 
@@ -1597,8 +1600,13 @@ End Sub
 '===============================================================
 ' Таблица качества по человеку/полю
 '===============================================================
+'===============================================================
+' Таблица качества по человеку/полю
+'===============================================================
 Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByRef lastUsedRow As Long)
-    LogStep "FillPersonTable: начало для поля '" & fieldName & "'"
+    On Error GoTo FillPersonFail
+    
+    LogStep "FillPersonTable: начало, поле: " & fieldName
     lastUsedRow = startRow
     
     Dim lo As ListObject
@@ -1607,12 +1615,14 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
     On Error GoTo 0
     
     If lo Is Nothing Then
-        LogStep "FillPersonTable: тблПроекты не найдена. Выход."
+        LogStep "ВНИМАНИЕ: FillPersonTable прервана. Таблица тблПроекты не найдена."
+        Call CreatePersonTableHeaders(ws, startRow, baseCol, title, fieldName, 0, lastUsedRow)
         Exit Sub
     End If
     
     If lo.DataBodyRange Is Nothing Then
-        LogStep "FillPersonTable: тблПроекты пуста (нет строк данных). Выход."
+        LogStep "ВНИМАНИЕ: FillPersonTable прервана. Таблица тблПроекты пуста (нет DataBodyRange). Таблица по полю '" & fieldName & "' не создана."
+        Call CreatePersonTableHeaders(ws, startRow, baseCol, title, fieldName, 0, lastUsedRow)
         Exit Sub
     End If
 
@@ -1649,8 +1659,11 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
         End If
     Next i
     
+    LogStep "FillPersonTable: найдено уникальных значений: " & m
+    
     If m = 0 Then
         LogStep "FillPersonTable: Поле '" & fieldName & "' не содержит заполненных значений. Таблица не создана."
+        Call CreatePersonTableHeaders(ws, startRow, baseCol, title, fieldName, 0, lastUsedRow)
         Exit Sub
     End If
 
@@ -1724,6 +1737,64 @@ Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal s
     loNew.ShowAutoFilterDropDown = True
     
     lastUsedRow = startRow + m + 1
-    LogStep "FillPersonTable: завершено для '" & fieldName & "'. lastUsedRow установлен в " & lastUsedRow
+    LogStep "FillPersonTable: завершено для поля " & fieldName
+    Exit Sub
+
+FillPersonFail:
+    LogError "FillPersonTable (Поле: " & fieldName & ")", Err.Number, Err.Description
+    Call CreatePersonTableHeaders(ws, startRow, baseCol, title, fieldName, 0, lastUsedRow)
+    Exit Sub
 End Sub
 
+Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByVal rowCount As Long, ByRef lastUsedRow As Long)
+    Dim cName As String
+    cName = colLetter(baseCol)
+    
+    ws.Cells(startRow, baseCol).value = "< " & title
+    ws.Cells(startRow, baseCol).Font.Bold = True
+    On Error Resume Next
+    ws.Hyperlinks.Add Anchor:=ws.Cells(startRow, baseCol), Address:="", SubAddress:="TOC", TextToDisplay:="< " & title
+    On Error GoTo 0
+    
+    ws.Cells(startRow + 1, baseCol).value = fieldName
+    ws.Cells(startRow + 1, baseCol + 1).value = "Всего"
+    ws.Cells(startRow + 1, baseCol + 2).value = "Без ошибок"
+    ws.Cells(startRow + 1, baseCol + 3).value = "С ошибками"
+    ws.Cells(startRow + 1, baseCol + 4).value = "Индекс качества"
+    
+    ws.Columns(cName).ColumnWidth = 32
+    ws.Columns(colLetter(baseCol + 1)).ColumnWidth = 8
+    ws.Columns(colLetter(baseCol + 2)).ColumnWidth = 12
+    ws.Columns(colLetter(baseCol + 3)).ColumnWidth = 12
+    ws.Columns(colLetter(baseCol + 4)).ColumnWidth = 14
+    
+    Dim actualRowCount As Long
+    actualRowCount = IIf(rowCount = 0, 1, rowCount)
+    ApplyBorders ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + actualRowCount, baseCol + 4))
+    
+    Dim tblName As String
+    Select Case fieldName
+        Case "Автор": tblName = "тблСтатАвторы"
+        Case "Куратор": tblName = "тблСтатКураторы"
+        Case "Менеджер ОП": tblName = "тблСтатМенеджеры"
+        Case "Руководитель проекта": tblName = "тблСтатРП"
+        Case Else: tblName = "тблСтат" & Replace(fieldName, " ", "")
+    End Select
+    
+    Dim tblRange As Range
+    Set tblRange = ws.Range(ws.Cells(startRow + 1, baseCol), ws.Cells(startRow + 1 + actualRowCount, baseCol + 4))
+    
+    Dim loOld As ListObject
+    On Error Resume Next
+    Set loOld = ws.ListObjects(tblName)
+    If Not loOld Is Nothing Then loOld.Delete
+    On Error GoTo 0
+    
+    Dim loNew As ListObject
+    Set loNew = ws.ListObjects.Add(xlSrcRange, tblRange, , xlYes)
+    loNew.name = tblName
+    loNew.tableStyle = "TableStyleLight13"
+    loNew.ShowAutoFilterDropDown = True
+    
+    lastUsedRow = startRow + actualRowCount + 1
+End Sub
