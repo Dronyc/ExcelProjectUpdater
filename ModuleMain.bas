@@ -8,8 +8,8 @@ Option Explicit
 ' МАКРОС 1: Создать всё с нуля
 '===============================================================
 Public Sub CreateAllFromScratch()
-    InitLogging "CreateAll_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
-    LogStep "=== CreateAllFromScratch: НАЧАЛО ==="
+    InitLogging Format(Now, "yyyy-mm-dd_hh-mm-ss") & "_CreateAll.txt"
+    LogStep "НАЧАЛО: CreateAllFromScratch"
     
     Dim rootFolder As String
     rootFolder = ThisWorkbook.path & "\"
@@ -33,6 +33,7 @@ Public Sub CreateAllFromScratch()
     ProgressHide
     
     EndLogging
+    LogStep "ЗАВЕРШЕНО: CreateAllFromScratch"
     MsgBox "Структура проекта создана успешно!" & vbCrLf & vbCrLf & _
            "Созданы файлы и листы:" & vbCrLf & _
            "  [OK] Проекты РЦ АСКОН_Волга в Архив.xlsx" & vbCrLf & _
@@ -49,8 +50,8 @@ End Sub
 ' МАКРОС 2: Обновить проекты
 '===============================================================
 Public Sub UpdateProjectsMain()
-    InitLogging "UpdateProjects_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
-    LogStep "=== UpdateProjectsMain: НАЧАЛО ==="
+    InitLogging Format(Now, "yyyy-mm-dd_hh-mm-ss") & "_UpdateProjects.txt"
+    LogStep "НАЧАЛО: UpdateProjectsMain"
     
     Dim rootFolder As String
     rootFolder = ThisWorkbook.path & "\"
@@ -64,14 +65,15 @@ Public Sub UpdateProjectsMain()
     ProgressHide
     
     EndLogging
+    LogStep "ЗАВЕРШЕНО: UpdateProjectsMain"
 End Sub
 
 '===============================================================
 ' МАКРОС 3: Обновить логику и оформление
 '===============================================================
 Public Sub UpgradeAllLogicAndFormatting()
-    InitLogging "UpgradeAll_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
-    LogStep "=== UpgradeAllLogicAndFormatting: НАЧАЛО ==="
+    InitLogging Format(Now, "yyyy-mm-dd_hh-mm-ss") & "_UpgradeAll.txt"
+    LogStep "НАЧАЛО: UpgradeAllLogicAndFormatting"
     
     Dim rootFolder As String
     rootFolder = ThisWorkbook.path & "\"
@@ -95,6 +97,7 @@ Public Sub UpgradeAllLogicAndFormatting()
     ProgressHide
     
     EndLogging
+    LogStep "ЗАВЕРШЕНО: UpgradeAllLogicAndFormatting"
     MsgBox "Логика и оформление обновлены!" & vbCrLf & _
            "Данные сохранены.", vbInformation
 End Sub
@@ -130,8 +133,8 @@ End Sub
 ' МАКРОС 4: Пересчитать аналитику
 '===============================================================
 Public Sub RefreshAnalyticsMain()
-    InitLogging "RefreshAnalytics_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
-    LogStep "=== RefreshAnalyticsMain: НАЧАЛО ==="
+    InitLogging Format(Now, "yyyy-mm-dd_hh-mm-ss") & "_RefreshAnalytics.txt"
+    LogStep "НАЧАЛО: RefreshAnalyticsMain"
     
     Dim rootFolder As String
     rootFolder = ThisWorkbook.path & "\"
@@ -144,6 +147,7 @@ Public Sub RefreshAnalyticsMain()
     
     ProgressHide
     EndLogging
+    LogStep "ЗАВЕРШЕНО: RefreshAnalyticsMain"
 End Sub
 
 

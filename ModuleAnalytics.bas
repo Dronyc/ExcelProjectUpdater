@@ -217,8 +217,8 @@ End Sub
 ' МАКРОС 3: Пересчитать аналитику (заполнить данными)
 '===============================================================
 Public Sub RefreshAnalytics(ByVal rootFolder As String)
-    InitLogging "RefreshAnalytics_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
-    LogStep "=== RefreshAnalytics: НАЧАЛО ==="
+    InitLogging Format(Now, "yyyy-mm-dd_hh-mm-ss") & "_RefreshAnalytics.txt"
+    LogStep "НАЧАЛО: RefreshAnalytics"
     
     Dim finalPath As String
     finalPath = rootFolder & FILE_FINAL
@@ -306,9 +306,11 @@ Public Sub RefreshAnalytics(ByVal rootFolder As String)
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
     
+    LogStep "ЗАВЕРШЕНО: RefreshAnalytics"
     Exit Sub
 
 RefreshFail:
+    LogError gStep, Err.Number, Err.description
     Application.Calculation = oldCalc
     Application.EnableEvents = True
     Application.DisplayAlerts = True
@@ -323,7 +325,7 @@ End Sub
 ' СОЗДАНИЕ ПУСТОЙ ТАБЛИЦЫ ЭТАЛОНА
 '===============================================================
 Private Sub CreateEmptyReferenceTable(ByVal wsRef As Worksheet)
-    LogStep "CreateEmptyReferenceTable: создание пустой таблицы"
+    LogStep "НАЧАЛО: CreateEmptyReferenceTable"
     
     ' Заголовки (как в тблПроекты)
     Dim headers As Variant
@@ -356,6 +358,7 @@ Private Sub CreateEmptyReferenceTable(ByVal wsRef As Worksheet)
     Set lo = wsRef.ListObjects.Add(xlSrcRange, wsRef.Range(wsRef.Cells(1, 1), wsRef.Cells(2, UBound(headers) + 1)), , xlYes)
     lo.name = TBL_REFERENCE
     lo.tableStyle = "TableStyleLight15"
+    LogStep "Таблица " & TBL_REFERENCE & " создана на листе " & wsRef.name
     
     ' Удаляем пустую строку данных
     If Not lo.DataBodyRange Is Nothing Then
@@ -380,11 +383,11 @@ Private Sub CreateEmptyReferenceTable(ByVal wsRef As Worksheet)
     wsRef.Columns(15).ColumnWidth = 12
     wsRef.Columns(16).ColumnWidth = 12
     
-    LogStep "CreateEmptyReferenceTable: завершено"
+    LogStep "ЗАВЕРШЕНО: CreateEmptyReferenceTable"
 Exit Sub
 
 CreateFail:
-    LogStep "CreateEmptyReferenceTable: ОШИБКА в строке " & Erl & ", код=" & Err.Number & ", описание=" & Err.description
+    LogError gStep, Err.Number, Err.description
     Err.Raise Err.Number, , Err.description
 End Sub
 
@@ -468,7 +471,7 @@ End Function
 ' ПОСТРОЕНИЕ ФОРМУЛ НА ЛИСТЕ "Аналитика"
 '===============================================================
 Private Sub BuildAnalyticsFormulas(ByVal wb As Workbook, ByVal wsAn As Worksheet)
-    LogStep "BuildAnalyticsFormulas: начало"
+    LogStep "НАЧАЛО: BuildAnalyticsFormulas"
     
     ' Заголовок
     wsAn.Range("A1").value = "Аналитика: сравнение Эталон vs Текущий"
@@ -493,8 +496,12 @@ Private Sub BuildAnalyticsFormulas(ByVal wb As Workbook, ByVal wsAn As Worksheet
     wsAn.Cells(rowT1 + 1, 1).Resize(1, 5).Interior.color = RGB(221, 235, 247)
     
     wsAn.Cells(rowT1 + 2, 1).value = "Всего карточек"
+    gStep = "Запись формулы: Всего карточек (Эталон)"
     wsAn.Cells(rowT1 + 2, 2).FormulaLocal = "=СЧЁТЗ(" & TBL_REFERENCE & "[Дата создания])"
+    LogStep "Формула записана в ячейку B" & (rowT1 + 2) & ": " & wsAn.Cells(rowT1 + 2, 2).FormulaLocal
+    gStep = "Запись формулы: Всего карточек (Текущий)"
     wsAn.Cells(rowT1 + 2, 3).FormulaLocal = "=СЧЁТЗ(тблПроекты[Дата создания])"
+    LogStep "Формула записана в ячейку C" & (rowT1 + 2) & ": " & wsAn.Cells(rowT1 + 2, 3).FormulaLocal
     wsAn.Cells(rowT1 + 2, 4).FormulaLocal = "=C" & (rowT1 + 2) & "-B" & (rowT1 + 2)
     wsAn.Cells(rowT1 + 2, 5).FormulaLocal = "=ЕСЛИ(B" & (rowT1 + 2) & "=0;"""";(C" & (rowT1 + 2) & "-B" & (rowT1 + 2) & ")/B" & (rowT1 + 2) & ")"
     

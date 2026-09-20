@@ -30,7 +30,7 @@ Public Sub InitLogging(Optional ByVal logFileName As String = "")
     
     ' Формируем имя файла
     If Len(logFileName) = 0 Then
-        logFileName = "Log_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
+        logFileName = Format(Now, "yyyy-mm-dd_hh-mm-ss") & "_Log.txt"
     End If
     
     mLogFilePath = mLogFolder & logFileName

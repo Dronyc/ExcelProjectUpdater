@@ -10,11 +10,13 @@ Option Explicit
 ' СОЗДАНИЕ ФАЙЛОВ РЕШЕНИЯ
 '===============================================================
 Public Sub CreateProjectFiles(ByVal rootFolder As String)
-    LogStep "CreateProjectFiles: начало"
+    LogStep "НАЧАЛО: CreateProjectFiles"
     
     Dim finalFilePath As String, currentFilePath As String
     finalFilePath = rootFolder & "Проекты РЦ АСКОН_Волга в Архив.xlsx"
     currentFilePath = rootFolder & "Выгрузка проектов_current.xlsx"
+    
+    LogStep "Проверка файлов: " & finalFilePath
     
     If IsWorkbookOpenInApp("Проекты РЦ АСКОН_Волга в Архив.xlsx") Then
         Err.Raise vbObjectError + 1, , "Итоговый файл уже открыт"
@@ -31,34 +33,60 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     
     Dim wb As Workbook: Set wb = Workbooks.Add
     
+    LogStep "Создание книги: " & wb.Name
+    
     ' Создаём листы в строгом порядке: Проекты, Статистика, Аналитика, Эталон_Данные, Легенда, СправочникСтатусов, СправочникСостояний, СправочникПродуктов, Ошибки, Выгрузка
     Dim wsProjects As Worksheet, wsStat As Worksheet, wsAnalytics As Worksheet
     Dim wsRefData As Worksheet, wsLegend As Worksheet, wsManualRef As Worksheet
     Dim wsAllowedRef As Worksheet, wsProductRef As Worksheet, wsErrors As Worksheet, wsSource As Worksheet
     
     Set wsProjects = wb.Sheets(1): wsProjects.name = "Проекты"
+    LogStep "Лист создан: " & wsProjects.name
+    
     Set wsStat = wb.Sheets.Add(After:=wsProjects): wsStat.name = "Статистика"
+    LogStep "Лист создан: " & wsStat.name
+    
     Set wsAnalytics = wb.Sheets.Add(After:=wsStat): wsAnalytics.name = "Аналитика"
+    LogStep "Лист создан: " & wsAnalytics.name
+    
     Set wsRefData = wb.Sheets.Add(After:=wsAnalytics): wsRefData.name = "Эталон_Данные"
+    LogStep "Лист создан: " & wsRefData.name
+    
     Set wsLegend = wb.Sheets.Add(After:=wsRefData): wsLegend.name = "Легенда"
+    LogStep "Лист создан: " & wsLegend.name
+    
     Set wsManualRef = wb.Sheets.Add(After:=wsLegend): wsManualRef.name = "СправочникСтатусов"
+    LogStep "Лист создан: " & wsManualRef.name
+    
     Set wsAllowedRef = wb.Sheets.Add(After:=wsManualRef): wsAllowedRef.name = "СправочникСостояний"
+    LogStep "Лист создан: " & wsAllowedRef.name
+    
     Set wsProductRef = wb.Sheets.Add(After:=wsAllowedRef): wsProductRef.name = "СправочникПродуктов"
+    LogStep "Лист создан: " & wsProductRef.name
+    
     Set wsErrors = wb.Sheets.Add(After:=wsProductRef): wsErrors.name = "Ошибки"
+    LogStep "Лист создан: " & wsErrors.name
+    
     Set wsSource = wb.Sheets.Add(After:=wsErrors): wsSource.name = "Выгрузка"
+    LogStep "Лист создан: " & wsSource.name
     
     ' === ИЗМЕНЕНИЕ: Сначала создаём все справочные таблицы, особенно тблСправочникПродуктов ===
     ' Это необходимо, так как формулы в тблПроекты ссылаются на тблСправочникПродуктов
+    LogStep "Создание таблиц справочников"
     CreateLegendSheet wsLegend, wb, finalFilePath, currentFilePath
     CreateManualReferenceSheet wsManualRef, wb
     CreateAllowedReferenceSheet wsAllowedRef, wb
     CreateProductReferenceSheet wb  ' Создаётся ДО CreateProjectsSheet
+    LogStep "Таблица тблСправочникПродуктов создана на листе СправочникПродуктов"
     CreateErrorsSheet wsErrors
     CreateSourceSheet wsSource
     CreateStatisticsSheet wb, wsStat
+    LogStep "Таблица тблСтатистика создана на листе Статистика"
     
     ' === ИЗМЕНЕНИЕ: Теперь создаём тблПроекты после всех справочников ===
+    LogStep "Создание таблицы тблПроекты на листе Проекты"
     CreateProjectsSheet wsProjects, wsLegend
+    LogStep "Таблица тблПроекты создана"
     
     ' Применяем стили ко всем таблицам
     Dim wsAny As Worksheet, loAny As ListObject
@@ -70,21 +98,25 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     
     wsProjects.ListObjects("тблПроекты").ListColumns("Дата создания").Range.NumberFormatLocal = "дд.мм.гггг чч:мм:сс"
     
+    LogStep "Операция с файловой системой: Kill " & finalFilePath
     If Not DeleteFileIfExists(finalFilePath) Then
         Err.Raise vbObjectError + 3, , "Не удалось удалить: " & finalFilePath
     End If
+    LogStep "Операция с файловой системой: Kill " & currentFilePath
     If Not DeleteFileIfExists(currentFilePath) Then
         Err.Raise vbObjectError + 4, , "Не удалось удалить: " & currentFilePath
     End If
     
+    LogStep "Операция с файловой системой: SaveAs " & finalFilePath
     wb.SaveAs fileName:=finalFilePath, FileFormat:=xlOpenXMLWorkbook
+    LogStep "Операция с файловой системой: SaveCopyAs " & currentFilePath
     wb.SaveCopyAs currentFilePath
     wb.Close SaveChanges:=False
     
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
     
-    LogStep "CreateProjectFiles: завершено"
+    LogStep "ЗАВЕРШЕНО: CreateProjectFiles"
 End Sub
 
 '===============================================================
