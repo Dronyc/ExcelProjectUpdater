@@ -55,10 +55,12 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     CreateProductReferenceSheet wb  ' Создаётся ДО CreateProjectsSheet
     CreateErrorsSheet wsErrors
     CreateSourceSheet wsSource
-    CreateStatisticsSheet wb, wsStat
     
-    ' === ИЗМЕНЕНИЕ: Теперь создаём тблПроекты после всех справочников ===
+    ' === ИЗМЕНЕНИЕ: Теперь создаём тблПроекты после всех справочников, но ДО тблСтатистика ===
     CreateProjectsSheet wsProjects, wsLegend
+    
+    ' === ИЗМЕНЕНИЕ: Создаём тблСтатистика после тблПроекты, так как формулы статистики ссылаются на тблПроекты ===
+    CreateStatisticsSheet wb, wsStat
     
     ' Применяем стили ко всем таблицам
     Dim wsAny As Worksheet, loAny As ListObject
