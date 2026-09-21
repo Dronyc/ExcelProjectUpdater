@@ -1143,7 +1143,7 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     On Error GoTo 0
     wb.Names.Add name:="TOC", RefersTo:="=" & ws.name & "!" & ws.Cells(tocRow, tocCol).Address
 
-    Dim tocTitles(1 To 16) As String
+    Dim tocTitles(1 To 12) As String
     tocTitles(1) = "1. Ключевые показатели качества"
     tocTitles(2) = "1-ТИМ. Ключевые показатели качества"
     tocTitles(3) = "1-PLM. Ключевые показатели качества"
@@ -1156,10 +1156,6 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     tocTitles(10) = "3 Смешанные (продукты ТИМ и PLM). Поля: корректность и заполненность"
     tocTitles(11) = "3-Неопределенные. Поля: корректность и заполненность"
     tocTitles(12) = "4. Дефекты данных БД"
-    tocTitles(13) = "5. Качество заполнения карточек по Авторам"
-    tocTitles(14) = "6. Качество заполнения карточек по Кураторам"
-    tocTitles(15) = "7. Качество заполнения карточек по Менеджерам ОП"
-    tocTitles(16) = "8. Качество заполнения карточек по Руководителям проекта"
 
     Dim rowT5 As Long: rowT5 = rowT4b + 10
     Dim rowT6 As Long: rowT6 = rowT5 + 7
@@ -1168,7 +1164,7 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     Dim rowT6d As Long: rowT6d = rowT6c + 14
     Dim rowT6e As Long: rowT6e = rowT6d + 14
     Dim rowT7 As Long: rowT7 = rowT6e + 14
-    Dim tableRows(1 To 16) As Long
+    Dim tableRows(1 To 12) As Long
     tableRows(1) = rowT1
     tableRows(2) = rowT2
     tableRows(3) = rowT3
@@ -1183,7 +1179,7 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     tableRows(12) = rowT7
 
     Dim ti As Long
-    For ti = 1 To 14
+    For ti = 1 To 12
         ws.Hyperlinks.Add Anchor:=ws.Cells(tocRow + ti, tocCol), Address:="", SubAddress:="=" & ws.name & "!A" & tableRows(ti), TextToDisplay:=tocTitles(ti)
     Next ti
     ws.Columns(colLetter(tocCol)).ColumnWidth = 55
@@ -1411,51 +1407,6 @@ Public Sub CreateStatisticsSheet(ByVal wb As Workbook, ByVal ws As Worksheet)
     ws.Range("A" & (rowT7 + 5)).value = "Состояние вне допустимого списка"
     ws.Range("B" & (rowT7 + 5)).formula = "=COUNTIFS(тблПроекты[Дата создания],""<>"",тблПроекты[Недопустимое Состояние],TRUE)"
     ApplyBorders ws.Range(ws.Cells(rowT7 + 1, 1), ws.Cells(rowT7 + 5, 2))
-
-    '================ 5-8. Качество по людям =================
-    ' === ПОСТРОЕНИЕ ТАБЛИЦ 5-8: КАЧЕСТВО ПО ЛЮДЯМ ===
-    LogStep "Построение таблиц 5-8: Качество по людям"
-    
-    Dim nextRow As Long
-    nextRow = rowT7 + 7
-
-    Dim startR5 As Long
-    startR5 = nextRow
-    tableRows(13) = startR5
-    FillPersonTable wb, ws, startR5, 1, "5. Качество заполнения карточек по Авторам", "Автор", nextRow
-
-    nextRow = nextRow + 2
-    Dim startR6 As Long
-    startR6 = nextRow
-    tableRows(14) = startR6
-    FillPersonTable wb, ws, startR6, 1, "6. Качество заполнения карточек по Кураторам", "Куратор", nextRow
-
-    nextRow = nextRow + 2
-    Dim startR7 As Long
-    startR7 = nextRow
-    tableRows(15) = startR7
-    FillPersonTable wb, ws, startR7, 1, "7. Качество заполнения карточек по Менеджерам ОП", "Менеджер ОП", nextRow
-
-    nextRow = nextRow + 2
-    Dim startR8 As Long
-    startR8 = nextRow
-    tableRows(16) = startR8
-    FillPersonTable wb, ws, startR8, 1, "8. Качество заполнения карточек по Руководителям проекта", "Руководитель проекта", nextRow
-
-    For ti = 13 To 16
-        ws.Hyperlinks.Add Anchor:=ws.Cells(tocRow + ti, tocCol), Address:="", SubAddress:="=" & ws.name & "!A" & tableRows(ti), TextToDisplay:=tocTitles(ti)
-    Next ti
-
-    ws.Columns("A").ColumnWidth = 40
-    ws.Columns("B").ColumnWidth = 14
-    ws.Columns("C").ColumnWidth = 14
-    ws.Columns("D").ColumnWidth = 14
-    ws.Columns("E").ColumnWidth = 14
-    ws.Columns("F").ColumnWidth = 14
-    Dim wc As Long
-    For wc = 2 To totalCol
-        ws.Columns(colLetter(wc)).ColumnWidth = 14
-    Next wc
 
     '================ ДИАГРАММЫ =================
     Dim chartLeft As Double

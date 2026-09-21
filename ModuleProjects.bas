@@ -39,7 +39,9 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     Set wsProjects = wb.Sheets(1): wsProjects.name = "Проекты"
     Set wsStat = wb.Sheets.Add(After:=wsProjects): wsStat.name = "Статистика"
     Set wsAnalytics = wb.Sheets.Add(After:=wsStat): wsAnalytics.name = "Аналитика"
-    Set wsRefData = wb.Sheets.Add(After:=wsAnalytics): wsRefData.name = "Эталон_Данные"
+    Dim wsQuality As Worksheet
+    Set wsQuality = wb.Sheets.Add(After:=wsAnalytics): wsQuality.name = "Качество заполнения по людям"
+    Set wsRefData = wb.Sheets.Add(After:=wsQuality): wsRefData.name = "Эталон_Данные"
     Set wsLegend = wb.Sheets.Add(After:=wsRefData): wsLegend.name = "Легенда"
     Set wsManualRef = wb.Sheets.Add(After:=wsLegend): wsManualRef.name = "СправочникСтатусов"
     Set wsAllowedRef = wb.Sheets.Add(After:=wsManualRef): wsAllowedRef.name = "СправочникСостояний"
@@ -61,6 +63,9 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     
     ' === ИЗМЕНЕНИЕ: Создаём тблСтатистика после тблПроекты, так как формулы статистики ссылаются на тблПроекты ===
     CreateStatisticsSheet wb, wsStat
+    
+    ' === Вызов CreateQualityByPeopleSheet для создания таблиц качества по людям ===
+    Call CreateQualityByPeopleSheet(wb)
     
     ' Применяем стили ко всем таблицам
     Dim wsAny As Worksheet, loAny As ListObject
@@ -87,6 +92,96 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     Application.ScreenUpdating = True
     
     LogStep "CreateProjectFiles: завершено"
+End Sub
+
+'===============================================================
+' СОЗДАНИЕ ЛИСТА "КАЧЕСТВО ЗАПОЛНЕНИЯ ПО ЛЮДЯМ"
+'===============================================================
+Public Sub CreateQualityByPeopleSheet(ByVal wb As Workbook)
+    LogStep "CreateQualityByPeopleSheet: начало"
+    
+    Dim ws As Worksheet
+    Dim wsAfter As Worksheet
+    
+    ' Проверяем наличие листа, создаем если нет
+    On Error Resume Next
+    Set ws = wb.Worksheets("Качество заполнения по людям")
+    On Error GoTo 0
+    
+    If ws Is Nothing Then
+        ' Определяем лист, после которого размещать новый
+        On Error Resume Next
+        Set wsAfter = wb.Worksheets("Аналитика")
+        If Err.Number <> 0 Then
+            Err.Clear
+            Set wsAfter = wb.Worksheets("Статистика")
+        End If
+        On Error GoTo 0
+        
+        Set ws = wb.Sheets.Add(After:=wsAfter)
+        ws.name = "Качество заполнения по людям"
+        LogStep "Создан лист 'Качество заполнения по людям'"
+    Else
+        LogStep "Лист 'Качество заполнения по людям' уже существует"
+    End If
+    
+    ' Очищаем содержимое листа перед построением
+    ws.Cells.Clear
+    Do While ws.ListObjects.count > 0
+        ws.ListObjects(1).Delete
+    Loop
+    Dim ci As Long
+    For ci = ws.ChartObjects.count To 1 Step -1
+        ws.ChartObjects(ci).Delete
+    Next ci
+    Dim h As Long
+    For h = ws.Hyperlinks.count To 1 Step -1
+        ws.Hyperlinks(h).Delete
+    Next h
+    
+    ' Заголовок листа
+    ws.Range("A1").value = "Качество заполнения по людям"
+    ws.Range("A1").Font.Bold = True
+    ws.Range("A1").Font.Size = 14
+    
+    ' Последовательно вызываем FillPersonTable для каждой роли
+    ' baseCol = 2, чтобы таблицы формировались со сдвигом вправо на один столбец (начиная с колонки B)
+    Dim nextRow As Long
+    nextRow = 3
+    
+    Dim startRow As Long
+    
+    ' 1. Автор
+    startRow = nextRow
+    FillPersonTable wb, ws, startRow, 2, "1. Качество заполнения карточек по Авторам", "Автор", nextRow
+    
+    nextRow = nextRow + 2
+    
+    ' 2. Куратор
+    startRow = nextRow
+    FillPersonTable wb, ws, startRow, 2, "2. Качество заполнения карточек по Кураторам", "Куратор", nextRow
+    
+    nextRow = nextRow + 2
+    
+    ' 3. Менеджер ОП
+    startRow = nextRow
+    FillPersonTable wb, ws, startRow, 2, "3. Качество заполнения карточек по Менеджерам ОП", "Менеджер ОП", nextRow
+    
+    nextRow = nextRow + 2
+    
+    ' 4. Руководитель проекта
+    startRow = nextRow
+    FillPersonTable wb, ws, startRow, 2, "4. Качество заполнения карточек по Руководителям проекта", "Руководитель проекта", nextRow
+    
+    ' Настройка ширины колонок
+    ws.Columns("A").ColumnWidth = 2
+    ws.Columns("B").ColumnWidth = 32
+    ws.Columns("C").ColumnWidth = 8
+    ws.Columns("D").ColumnWidth = 12
+    ws.Columns("E").ColumnWidth = 12
+    ws.Columns("F").ColumnWidth = 14
+    
+    LogStep "CreateQualityByPeopleSheet: завершено"
 End Sub
 
 '===============================================================
@@ -446,6 +541,11 @@ ContinueAddLoop:
     End If
     On Error GoTo UpdateFail
     
+    ' === Вызов CreateQualityByPeopleSheet для обновления таблиц качества по людям ===
+    gStep = "Создание листа 'Качество заполнения по людям'"
+    ProgressSet 95, "Создание листа 'Качество заполнения по людям'..."
+    Call CreateQualityByPeopleSheet(wbTarget)
+    
     ' === ИЗМЕНЕНИЕ: Удалены вызовы BuildProductMapping и FillGroupColumns ===
     ' Столбцы "Группа ПГС" и "Группа PLM" теперь заполняются ТОЛЬКО формулами через SetAllProjectFormulas
     ' Механизм Calculated Column автоматически распространяет формулы на все строки таблицы
@@ -624,6 +724,10 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     End If
     LogStep "Вызов обновления листа Статистика..."
     CreateStatisticsSheet wb, wsStat
+    
+    ' === Вызов CreateQualityByPeopleSheet для обновления таблиц качества по людям ===
+    LogStep "Вызов обновления листа 'Качество заполнения по людям'..."
+    Call CreateQualityByPeopleSheet(wb)
     
     ' Сохранение цветов
     wb.Save
