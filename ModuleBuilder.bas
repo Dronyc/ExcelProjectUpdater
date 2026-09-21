@@ -1553,8 +1553,9 @@ End Sub
 '===============================================================
 '===============================================================
 ' Таблица качества по человеку/полю
+' Эти процедуры должны быть Public, так как вызываются из ModuleProjects.bas
 '===============================================================
-Private Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByRef lastUsedRow As Long)
+Public Sub FillPersonTable(ByVal wb As Workbook, ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByRef lastUsedRow As Long)
     On Error GoTo FillPersonFail
     
     LogStep "FillPersonTable: начало, поле: " & fieldName
@@ -1697,7 +1698,11 @@ FillPersonFail:
     Exit Sub
 End Sub
 
-Private Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByVal rowCount As Long, ByRef lastUsedRow As Long)
+'===============================================================
+' Создание заголовков таблицы качества по людям
+' Эта процедура должна быть Public, так как вызывается из FillPersonTable (ModuleBuilder.bas)
+'===============================================================
+Public Sub CreatePersonTableHeaders(ByVal ws As Worksheet, ByVal startRow As Long, ByVal baseCol As Long, ByVal title As String, ByVal fieldName As String, ByVal rowCount As Long, ByRef lastUsedRow As Long)
     Dim cName As String
     cName = colLetter(baseCol)
     

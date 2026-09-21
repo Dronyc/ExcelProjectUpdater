@@ -84,6 +84,10 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
         Err.Raise vbObjectError + 4, , "Не удалось удалить: " & currentFilePath
     End If
     
+    ' Упорядочивание листов перед сохранением
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
+    
     wb.SaveAs fileName:=finalFilePath, FileFormat:=xlOpenXMLWorkbook
     wb.SaveCopyAs currentFilePath
     wb.Close SaveChanges:=False
@@ -607,7 +611,8 @@ ContinueAddLoop:
     Else
         resultMessage = resultMessage & "Внимание: файл выгрузки не перемещен."
     End If
-    MsgBox resultMessage, vbInformation
+    ' Сообщение об успехе удалено - вызывается из UpdateProjectsMain, где головная процедура выводит результат
+    LogStep resultMessage
     
     Exit Sub
     
@@ -754,6 +759,10 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
         Err.Clear
     End If
     On Error GoTo 0
+    
+    ' Упорядочивание листов перед сохранением
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
     
     wb.Close SaveChanges:=False: Set wb = Nothing
     LogStep "UpgradeProjectsLogic: завершено"
