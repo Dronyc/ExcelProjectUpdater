@@ -559,6 +559,13 @@ ContinueAddLoop:
     ProgressSet 96, "Запись ошибок..."
     WriteErrorsToWorkbook wbTarget, errorsCol
     
+    ' Упорядочивание листов перед сохранением
+    ' Вызов ReorderAllSheets обеспечивает правильный порядок листов согласно ТЗ:
+    ' Проекты, Статистика, Аналитика, Качество заполнения по людям, Эталон_Данные, Легенда, Справочники, Ошибки, Выгрузка
+    gStep = "Упорядочивание листов"
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
+    
     gStep = "Сохранение результата"
     ProgressSet 98, "Сохранение..."
     If targetPath = finalPath Then
@@ -747,6 +754,13 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     End If
     
     Dim currentPath As String: currentPath = rootFolder & "Выгрузка проектов_current.xlsx"
+    
+    ' Упорядочивание листов перед сохранением
+    ' Вызов ReorderAllSheets обеспечивает правильный порядок листов согласно ТЗ:
+    ' Проекты, Статистика, Аналитика, Качество заполнения по людям, Эталон_Данные, Легенда, Справочники, Ошибки, Выгрузка
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
+    
     On Error Resume Next
     DeleteFileIfExists currentPath
     If Err.Number <> 0 Then
@@ -759,10 +773,6 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
         Err.Clear
     End If
     On Error GoTo 0
-    
-    ' Упорядочивание листов перед сохранением
-    LogStep "Упорядочивание листов"
-    ReorderAllSheets
     
     wb.Close SaveChanges:=False: Set wb = Nothing
     LogStep "UpgradeProjectsLogic: завершено"
