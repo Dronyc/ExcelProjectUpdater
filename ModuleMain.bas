@@ -54,6 +54,8 @@ End Sub
 ' МАКРОС 2: Обновить проекты
 '===============================================================
 Public Sub UpdateProjectsMain()
+    On Error GoTo ErrorHandler
+    
     InitLogging "UpdateProjects_" & Format(Now, "yyyy-mm-dd_hh-mm-ss") & ".txt"
     LogStep "=== UpdateProjectsMain: НАЧАЛО ==="
     
@@ -69,6 +71,22 @@ Public Sub UpdateProjectsMain()
     ProgressHide
     
     EndLogging
+    Exit Sub
+    
+ErrorHandler:
+    LogError "UpdateProjectsMain", Err.Number, Err.description
+    EndLogging
+    ProgressHide
+    
+    MsgBox "Ошибка при обновлении проектов." & vbCrLf & _
+           "Шаг: " & gStep & vbCrLf & _
+           "Код ошибки: " & Err.Number & vbCrLf & _
+           "Описание: " & Err.description, vbCritical
+    
+    On Error Resume Next
+    Set wbSource = Nothing
+    Set wbTarget = Nothing
+    On Error GoTo 0
 End Sub
 
 '===============================================================

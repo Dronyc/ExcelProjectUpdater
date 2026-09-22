@@ -44,7 +44,10 @@ Public Sub CreateAnalyticsStructure(ByVal rootFolder As String)
     
     LogStep "Открытие итогового файла"
     Set wb = Workbooks.Open(fileName:=finalPath, ReadOnly:=False, UpdateLinks:=0, AddToMru:=False)
-    If wb Is Nothing Then Err.Raise vbObjectError + 30, , "Не удалось открыть: " & finalPath
+    If wb Is Nothing Then
+        MsgBox "Не удалось открыть файл:" & vbCrLf & finalPath, vbExclamation
+        GoTo CreateFail
+    End If
     
     ' Удаление старых листов аналитики
     ' ИСПРАВЛЕНИЕ: Удалено удаление базовых справочных листов (СправочникПродуктов, Проекты и др.)
@@ -162,7 +165,10 @@ Public Sub UpgradeAnalyticsStructure(ByVal rootFolder As String)
     
     LogStep "Открытие итогового файла"
     Set wb = Workbooks.Open(fileName:=finalPath, ReadOnly:=False, UpdateLinks:=0, AddToMru:=False)
-    If wb Is Nothing Then Err.Raise vbObjectError + 30, , "Не удалось открыть: " & finalPath
+    If wb Is Nothing Then
+        MsgBox "Не удалось открыть файл:" & vbCrLf & finalPath, vbExclamation
+        GoTo UpgradeFail
+    End If
     
     ' Удаление старых листов
     LogStep "Удаление старых листов аналитики"
@@ -244,7 +250,10 @@ Public Sub RefreshAnalytics(ByVal rootFolder As String)
     
     LogStep "Открытие итогового файла"
     Set wb = Workbooks.Open(fileName:=finalPath, ReadOnly:=False, UpdateLinks:=0, AddToMru:=False)
-    If wb Is Nothing Then Err.Raise vbObjectError + 30, , "Не удалось открыть: " & finalPath
+    If wb Is Nothing Then
+        MsgBox "Не удалось открыть файл:" & vbCrLf & finalPath, vbExclamation
+        GoTo RefreshFail
+    End If
     
     ' Проверка наличия листа Эталон_Данные
     Dim wsRef As Worksheet
@@ -385,6 +394,8 @@ Exit Sub
 
 CreateFail:
     LogStep "CreateEmptyReferenceTable: ОШИБКА в строке " & Erl & ", код=" & Err.Number & ", описание=" & Err.description
+    ' Перебрасываем ошибку на уровень выше, где уже есть обработчик
+    On Error GoTo 0
     Err.Raise Err.Number, , Err.description
 End Sub
 
@@ -901,6 +912,8 @@ Exit Sub
 
 BuildFail:
     LogStep "BuildAnalyticsFormulas: ОШИБКА в строке " & Erl & ", код=" & Err.Number & ", описание=" & Err.description
+    ' Перебрасываем ошибку на уровень выше, где уже есть обработчик
+    On Error GoTo 0
     Err.Raise Err.Number, , Err.description
 End Sub
 
