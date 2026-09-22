@@ -26,6 +26,11 @@ Public Sub CreateAllFromScratch()
     LogStep "Шаг 2: Создание структуры аналитики"
     ProgressSet 50, "Создание структуры аналитики..."
     CreateAnalyticsStructure rootFolder
+    
+    ' 3. Упорядочивание листов во всех книгах
+    LogStep "Шаг 3: Упорядочивание листов"
+    ProgressSet 90, "Упорядочивание листов..."
+    ReorderAllSheets
        
     ProgressSet 100, "Готово!"
     Application.Calculate
@@ -89,6 +94,11 @@ Public Sub UpgradeAllLogicAndFormatting()
     ProgressSet 60, "Обновление структуры аналитики..."
     UpgradeAnalyticsStructure rootFolder
     
+    ' 3. Упорядочивание листов во всех книгах
+    LogStep "Шаг 3: Упорядочивание листов"
+    ProgressSet 90, "Упорядочивание листов..."
+    ReorderAllSheets
+    
     ProgressSet 100, "Готово!"
     Application.Calculate
     
@@ -101,8 +111,9 @@ End Sub
 
 '===============================================================
 ' Упорядочивание всех листов
+' Эта процедура должна быть Public, так как вызывается из ModuleProjects.bas
 '===============================================================
-Private Sub ReorderAllSheets()
+Public Sub ReorderAllSheets()
     Dim targetOrder As Variant
     targetOrder = Array("Проекты", "Статистика", "Аналитика", "Качество заполнения по людям", "Эталон_Данные", _
                        "Легенда", "СправочникСтатусов", "СправочникСостояний", _

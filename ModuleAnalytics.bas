@@ -197,8 +197,8 @@ Public Sub UpgradeAnalyticsStructure(ByVal rootFolder As String)
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
     
-    MsgBox "Логика и оформление аналитики обновлены." & vbCrLf & _
-           "Данные сохранены.", vbInformation
+    ' Сообщение об успехе удалено - вызывается из UpgradeAllLogicAndFormatting, где головная процедура выводит результат
+    LogStep "Логика и оформление аналитики обновлены. Данные сохранены."
     
     Exit Sub
 
@@ -1047,7 +1047,8 @@ Private Sub ReorderSheetsInWorkbook(ByVal wb As Workbook)
     LogStep "ReorderSheetsInWorkbook: начало"
     
     Dim targetOrder As Variant
-    targetOrder = Array("Проекты", "Статистика", "Аналитика", "Эталон_Данные", _
+    ' Добавлен лист "Качество заполнения по людям" на позицию 4 (после "Аналитика")
+    targetOrder = Array("Проекты", "Статистика", "Аналитика", "Качество заполнения по людям", "Эталон_Данные", _
                        "Легенда", "СправочникСтатусов", "СправочникСостояний", _
                        "СправочникПродуктов", "Ошибки", "Выгрузка")
     

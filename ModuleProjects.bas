@@ -84,6 +84,10 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
         Err.Raise vbObjectError + 4, , "Не удалось удалить: " & currentFilePath
     End If
     
+    ' Упорядочивание листов перед сохранением
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
+    
     wb.SaveAs fileName:=finalFilePath, FileFormat:=xlOpenXMLWorkbook
     wb.SaveCopyAs currentFilePath
     wb.Close SaveChanges:=False
@@ -555,6 +559,13 @@ ContinueAddLoop:
     ProgressSet 96, "Запись ошибок..."
     WriteErrorsToWorkbook wbTarget, errorsCol
     
+    ' Упорядочивание листов перед сохранением
+    ' Вызов ReorderAllSheets обеспечивает правильный порядок листов согласно ТЗ:
+    ' Проекты, Статистика, Аналитика, Качество заполнения по людям, Эталон_Данные, Легенда, Справочники, Ошибки, Выгрузка
+    gStep = "Упорядочивание листов"
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
+    
     gStep = "Сохранение результата"
     ProgressSet 98, "Сохранение..."
     If targetPath = finalPath Then
@@ -607,7 +618,8 @@ ContinueAddLoop:
     Else
         resultMessage = resultMessage & "Внимание: файл выгрузки не перемещен."
     End If
-    MsgBox resultMessage, vbInformation
+    ' Сообщение об успехе удалено - вызывается из UpdateProjectsMain, где головная процедура выводит результат
+    LogStep resultMessage
     
     Exit Sub
     
@@ -742,6 +754,13 @@ Public Sub UpgradeProjectsLogic(ByVal rootFolder As String)
     End If
     
     Dim currentPath As String: currentPath = rootFolder & "Выгрузка проектов_current.xlsx"
+    
+    ' Упорядочивание листов перед сохранением
+    ' Вызов ReorderAllSheets обеспечивает правильный порядок листов согласно ТЗ:
+    ' Проекты, Статистика, Аналитика, Качество заполнения по людям, Эталон_Данные, Легенда, Справочники, Ошибки, Выгрузка
+    LogStep "Упорядочивание листов"
+    ReorderAllSheets
+    
     On Error Resume Next
     DeleteFileIfExists currentPath
     If Err.Number <> 0 Then

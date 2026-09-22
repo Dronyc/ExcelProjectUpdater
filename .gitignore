@@ -1,1 +1,1 @@
-Nothing needs to be added to the .gitignore file since the changes only include VBA source files (.bas) which are legitimate source code files that should be tracked in version control.
+Nothing needs to be added to the .gitignore file since the modified files (ModuleMain.bas, ModuleProjects.bas) are source code files that should not be ignored.

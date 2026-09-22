@@ -193,6 +193,8 @@ End Function
 
 '===============================================================
 ' РАБОТА С КОЛЛЕКЦИЯМИ
+' Эти функции должны быть Public, так как используются в разных модулях
+' (ModuleBuilder.bas, ModuleProjects.bas и др.)
 '===============================================================
 Public Function CollectionHasKey(ByVal col As Collection, ByVal key As String) As Boolean
     On Error Resume Next
@@ -304,6 +306,8 @@ End Function
 
 '===============================================================
 ' ОФОРМЛЕНИЕ: ГРАНИЦЫ И ЦВЕТА
+' Эти процедуры должны быть Public, так как используются в разных модулях
+' (ModuleBuilder.bas, ModuleProjects.bas и др.)
 '===============================================================
 Public Sub ApplyBorders(ByVal rng As Range)
     With rng.Borders(xlInsideHorizontal)
@@ -330,6 +334,11 @@ Public Sub ApplyBorders(ByVal rng As Range)
     Next colOffset
 End Sub
 
+'===============================================================
+' ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+' Эти функции должны быть Public, так как используются в разных модулях
+' (ModuleBuilder.bas для формирования формул)
+'===============================================================
 Public Function colLetter(ByVal n As Long) As String
     Dim s As String: s = ""
     Do While n > 0
