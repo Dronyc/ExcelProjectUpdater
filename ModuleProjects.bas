@@ -17,10 +17,14 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     currentFilePath = rootFolder & "Выгрузка проектов_current.xlsx"
     
     If IsWorkbookOpenInApp("Проекты РЦ АСКОН_Волга в Архив.xlsx") Then
-        Err.Raise vbObjectError + 1, , "Итоговый файл уже открыт"
+        MsgBox "Итоговый файл уже открыт:" & vbCrLf & finalFilePath & vbCrLf & vbCrLf & _
+               "Закройте файл и повторите запуск.", vbExclamation
+        Exit Sub
     End If
     If IsWorkbookOpenInApp("Выгрузка проектов_current.xlsx") Then
-        Err.Raise vbObjectError + 2, , "Служебный файл уже открыт"
+        MsgBox "Служебный файл уже открыт:" & vbCrLf & currentFilePath & vbCrLf & vbCrLf & _
+               "Закройте файл и повторите запуск.", vbExclamation
+        Exit Sub
     End If
     
     If Not ConfirmOverwrite(finalFilePath) Then Exit Sub
@@ -29,6 +33,7 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     
+    On Error GoTo CreateFail
     Dim wb As Workbook: Set wb = Workbooks.Add
     
     ' Создаём листы в строгом порядке: Проекты, Статистика, Аналитика, Эталон_Данные, Легенда, СправочникСтатусов, СправочникСостояний, СправочникПродуктов, Ошибки, Выгрузка
@@ -78,10 +83,14 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     wsProjects.ListObjects("тблПроекты").ListColumns("Дата создания").Range.NumberFormatLocal = "дд.мм.гггг чч:мм:сс"
     
     If Not DeleteFileIfExists(finalFilePath) Then
-        Err.Raise vbObjectError + 3, , "Не удалось удалить: " & finalFilePath
+        MsgBox "Не удалось удалить файл:" & vbCrLf & finalFilePath & vbCrLf & vbCrLf & _
+               "Закройте файл и повторите запуск.", vbExclamation
+        GoTo CreateFail
     End If
     If Not DeleteFileIfExists(currentFilePath) Then
-        Err.Raise vbObjectError + 4, , "Не удалось удалить: " & currentFilePath
+        MsgBox "Не удалось удалить файл:" & vbCrLf & currentFilePath & vbCrLf & vbCrLf & _
+               "Закройте файл и повторите запуск.", vbExclamation
+        GoTo CreateFail
     End If
     
     ' Упорядочивание листов перед сохранением
@@ -96,6 +105,16 @@ Public Sub CreateProjectFiles(ByVal rootFolder As String)
     Application.ScreenUpdating = True
     
     LogStep "CreateProjectFiles: завершено"
+    Exit Sub
+    
+CreateFail:
+    LogError "CreateProjectFiles", Err.Number, Err.description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+    Set wb = Nothing
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    On Error GoTo 0
 End Sub
 
 '===============================================================
@@ -210,7 +229,12 @@ Public Sub UpdateProjectsFromExport(ByVal rootFolder As String)
     If IsWorkbookOpenInApp("Выгрузка проектов_export.xlsx") Or _
        IsWorkbookOpenInApp("Проекты РЦ АСКОН_Волга в Архив.xlsx") Or _
        IsWorkbookOpenInApp("Выгрузка проектов_current.xlsx") Then
-        Err.Raise vbObjectError + 11, , "Закройте файлы выгрузки и итоговые файлы"
+        MsgBox "Закройте файлы выгрузки и итоговые файлы:" & vbCrLf & _
+               "  - Выгрузка проектов_export.xlsx" & vbCrLf & _
+               "  - Проекты РЦ АСКОН_Волга в Архив.xlsx" & vbCrLf & _
+               "  - Выгрузка проектов_current.xlsx" & vbCrLf & vbCrLf & _
+               "После закрытия файлов повторите запуск.", vbExclamation
+        Exit Sub
     End If
     
     EnsureFolder rootFolder & "Archive_export"
@@ -239,7 +263,8 @@ Public Sub UpdateProjectsFromExport(ByVal rootFolder As String)
         diag = "Не удалось найти лист с нужными заголовками." & vbCrLf & vbCrLf & "Доступные листы:" & vbCrLf
         For Each wsInfo In wbSource.Worksheets: diag = diag & "  - '" & wsInfo.name & "'" & vbCrLf: Next wsInfo
         wbSource.Close SaveChanges:=False: Set wbSource = Nothing
-        Err.Raise vbObjectError + 12, , diag
+        MsgBox diag, vbExclamation
+        GoTo UpdateFailEarly
     End If
     
     gStep = "Проверка заголовков"
@@ -250,7 +275,8 @@ Public Sub UpdateProjectsFromExport(ByVal rootFolder As String)
     ReDim colIdx(1 To 12)
     If Not GetSourceColumnIndexes(wsSource, lastCol, colIdx, missingHeaders) Then
         wbSource.Close SaveChanges:=False: Set wbSource = Nothing
-        Err.Raise vbObjectError + 13, , "Отсутствуют столбцы:" & vbCrLf & missingHeaders
+        MsgBox "Отсутствуют столбцы в файле выгрузки:" & vbCrLf & missingHeaders, vbExclamation
+        GoTo UpdateFailEarly
     End If
     
     gStep = "Чтение данных выгрузки..."
@@ -374,13 +400,22 @@ NextSourceRow:
     ElseIf Len(Dir(currentPath)) > 0 Then
         targetPath = currentPath
     Else
-        Err.Raise vbObjectError + 14, , "Не найдены итоговые файлы. Запустите создание файлов."
+        MsgBox "Не найдены итоговые файлы. Запустите создание файлов." & vbCrLf & _
+               "Ожидаемые файлы:" & vbCrLf & _
+               "  - " & finalPath & vbCrLf & _
+               "  - " & currentPath, vbExclamation
+        GoTo UpdateFailEarly
     End If
     Set wbTarget = Workbooks.Open(fileName:=targetPath, ReadOnly:=False, UpdateLinks:=0, AddToMru:=False)
-    If wbTarget Is Nothing Then Err.Raise vbObjectError + 15, , "Не удалось открыть целевой файл"
+    If wbTarget Is Nothing Then
+        MsgBox "Не удалось открыть целевой файл:" & vbCrLf & targetPath, vbExclamation
+        GoTo UpdateFailEarly
+    End If
     If wbTarget.ReadOnly Then
         wbTarget.Close SaveChanges:=False: Set wbTarget = Nothing
-        Err.Raise vbObjectError + 16, , "Целевой файл только для чтения"
+        MsgBox "Целевой файл только для чтения:" & vbCrLf & targetPath & vbCrLf & vbCrLf & _
+               "Закройте файл в другом приложении и повторите запуск.", vbExclamation
+        GoTo UpdateFailEarly
     End If
     
     gStep = "Создание резервной копии..."
@@ -623,6 +658,28 @@ ContinueAddLoop:
     
     Exit Sub
     
+UpdateFailEarly:
+    ' Раннее завершение при ошибках до установки обработчика UpdateFail
+    LogError gStep, Err.Number, Err.description
+    EndLogging
+    ProgressHide
+    
+    ' Корректное освобождение объектов
+    On Error Resume Next
+    If Not wbSource Is Nothing Then wbSource.Close SaveChanges:=False
+    Set wbSource = Nothing
+    If Not wbTarget Is Nothing Then wbTarget.Close SaveChanges:=False
+    Set wbTarget = Nothing
+    On Error GoTo 0
+    
+    ' Восстановление настроек приложения
+    Application.Calculation = oldCalc
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    
+    Exit Sub
+
 UpdateFail:
     LogError gStep, Err.Number, Err.description
     EndLogging
@@ -640,7 +697,7 @@ UpdateFail:
         LogStep "Предупреждение: не удалось закрыть wbTarget. Ошибка: " & Err.description
         Err.Clear
     End If
-    On Error GoTo UpdateFail
+    On Error GoTo 0
     
     ' Явное освобождение ссылок на объекты
     Set wbSource = Nothing
