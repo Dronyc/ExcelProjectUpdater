@@ -1,1 +1,1 @@
-Nothing needs to be added to .gitignore since the changes only include VBA source files (.bas) which are legitimate source code files and not build artifacts, dependencies, or temporary files.
+(empty)
