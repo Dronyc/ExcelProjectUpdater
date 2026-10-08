@@ -6,7 +6,7 @@ Attribute VB_Name = "ModuleAnalytics"
 Option Explicit
 
 '--- Константы ---
-Private Const FILE_FINAL As String = "Проекты РЦ АСКОН_Волга в Архив.xlsx"
+' FILE_FINAL — общая константа из ModuleConfig (единственный источник истины)
 Private Const SHEET_ANALYTICS As String = "Аналитика"
 Private Const SHEET_REFERENCE_DATA As String = "Эталон_Данные"
 Private Const SHEET_PRODUCT_REF As String = "СправочникПродуктов"

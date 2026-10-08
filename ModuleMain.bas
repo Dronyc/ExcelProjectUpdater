@@ -82,11 +82,6 @@ ErrorHandler:
            "Шаг: " & gStep & vbCrLf & _
            "Код ошибки: " & Err.Number & vbCrLf & _
            "Описание: " & Err.description, vbCritical
-    
-    On Error Resume Next
-    Set wbSource = Nothing
-    Set wbTarget = Nothing
-    On Error GoTo 0
 End Sub
 
 '===============================================================
@@ -125,34 +120,6 @@ Public Sub UpgradeAllLogicAndFormatting()
     EndLogging
     MsgBox "Логика и оформление обновлены!" & vbCrLf & _
            "Данные сохранены.", vbInformation
-End Sub
-
-'===============================================================
-' Упорядочивание всех листов
-' Эта процедура должна быть Public, так как вызывается из ModuleProjects.bas
-'===============================================================
-Public Sub ReorderAllSheets()
-    Dim targetOrder As Variant
-    targetOrder = Array("Проекты", "Статистика", "Аналитика", "Качество заполнения по людям", "Эталон_Данные", _
-                       "Легенда", "СправочникСтатусов", "СправочникСостояний", _
-                       "СправочникПродуктов", "Ошибки", "Выгрузка")
-    Dim wb As Workbook
-    Set wb = ThisWorkbook
-    Dim i As Long
-    For i = 0 To UBound(targetOrder)
-        Dim ws As Worksheet
-        Set ws = Nothing
-        On Error Resume Next
-        Set ws = wb.Worksheets(targetOrder(i))
-        On Error GoTo 0
-        If Not ws Is Nothing Then
-            ' Делаем лист видимым перед перемещением
-            ws.Visible = xlSheetVisible
-            On Error Resume Next
-            ws.Move After:=wb.Worksheets(i + 1)
-            On Error GoTo 0
-        End If
-    Next i
 End Sub
 
 '===============================================================

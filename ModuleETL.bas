@@ -14,7 +14,7 @@ Option Explicit
 
 Private Const N_DATA_COLS As Long = 12       ' размер DATA_COLUMNS()/EXPORT_COLUMNS()
 Private Const N_ERR_COLS As Long = 7         ' размер ERROR_COLUMNS()
-Private Const ADODB_DATE_MIN As Date = #1/1/0100# ' служебные даты 01.01.0001 отбрасываются
+Private Const ADODB_DATE_MIN As Date = DateSerial(100, 1, 1) ' служебные даты 01.01.0001 отбрасываются
 
 '===============================================================
 ' ТОЧКА ВХОДА ETL: полный цикл Extract -> Transform -> Load
